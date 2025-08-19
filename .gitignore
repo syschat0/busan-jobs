@@ -1,0 +1,38 @@
+node_modules
+
+# claude
+.claude/
+CLAUDE.md
+
+# temp
+.data/
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# SvelteKit
+frontend/.svelte-kit/
+frontend/.build/
+frontend/.vercel/
+
+# Custom
+todo_list

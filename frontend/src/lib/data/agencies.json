@@ -1,0 +1,92 @@
+[
+  {
+    "name": "부산교통공사",
+    "type": "공사",
+    "description": "부산교통공사의 채용정보를 제공합니다.",
+    "website": "https://.co.kr",
+    "stats": {
+      "totalJobs": 17,
+      "totalHiring": 1522,
+      "avgCompetition": "45:1",
+      "popularCategories": [
+        "운영직",
+        "운전직",
+        "토목직",
+        "건축직",
+        "기계직"
+      ]
+    }
+  },
+  {
+    "name": "부산도시공사",
+    "type": "공사",
+    "description": "부산도시공사의 채용정보를 제공합니다.",
+    "website": "https://.co.kr",
+    "stats": {
+      "totalJobs": 63,
+      "totalHiring": 125,
+      "avgCompetition": "45:1",
+      "popularCategories": [
+        "공무직(비서)",
+        "공무직(안내)",
+        "공무직(운전)",
+        "행정직",
+        "건축직"
+      ]
+    }
+  },
+  {
+    "name": "부산시설공단",
+    "type": "공단",
+    "description": "부산시설공단의 채용정보를 제공합니다.",
+    "website": "https://.co.kr",
+    "stats": {
+      "totalJobs": 23,
+      "totalHiring": 652,
+      "avgCompetition": "45:1",
+      "popularCategories": [
+        "행정직",
+        "행정직(경력)",
+        "기계직",
+        "전기직",
+        "토목직"
+      ]
+    }
+  },
+  {
+    "name": "부산환경공단",
+    "type": "공단",
+    "description": "부산환경공단의 채용정보를 제공합니다.",
+    "website": "https://.co.kr",
+    "stats": {
+      "totalJobs": 128,
+      "totalHiring": 333,
+      "avgCompetition": "45:1",
+      "popularCategories": [
+        "일반직(행정)",
+        "일반직(기계)",
+        "일반직(전기)",
+        "일반직(환경)",
+        "일반직(토목)"
+      ]
+    }
+  },
+  {
+    "name": "부산관광공사",
+    "type": "공사",
+    "description": "부산관광공사의 채용정보를 제공합니다.",
+    "website": "https://.co.kr",
+    "stats": {
+      "totalJobs": 49,
+      "totalHiring": 156,
+      "avgCompetition": "45:1",
+      "popularCategories": [
+        "일반계약직",
+        "무기계약직",
+        "일반계약직3명 일용계약직3명",
+        "일반직 3명 전문계약직1명",
+        "일반사무직"
+      ]
+    }
+  }
+]

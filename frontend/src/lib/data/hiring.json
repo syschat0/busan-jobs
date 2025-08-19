@@ -1,0 +1,184 @@
+[
+  {
+    "id": "1",
+    "agencyName": "신규채용인원 현황",
+    "year": 2025,
+    "hiringCount": 0,
+    "category": "정규직(장애)"
+  },
+  {
+    "id": "2",
+    "agencyName": "부산교통공사",
+    "year": 2020,
+    "hiringCount": 630,
+    "category": "40"
+  },
+  {
+    "id": "3",
+    "agencyName": "부산교통공사",
+    "year": 2021,
+    "hiringCount": 188,
+    "category": "13"
+  },
+  {
+    "id": "4",
+    "agencyName": "부산교통공사",
+    "year": 2022,
+    "hiringCount": 129,
+    "category": "9"
+  },
+  {
+    "id": "5",
+    "agencyName": "부산교통공사",
+    "year": 2023,
+    "hiringCount": 88,
+    "category": "6"
+  },
+  {
+    "id": "6",
+    "agencyName": "부산교통공사",
+    "year": 2024,
+    "hiringCount": 109,
+    "category": "18"
+  },
+  {
+    "id": "7",
+    "agencyName": "부산도시공사",
+    "year": 2020,
+    "hiringCount": 12,
+    "category": "0"
+  },
+  {
+    "id": "8",
+    "agencyName": "부산도시공사",
+    "year": 2021,
+    "hiringCount": 12,
+    "category": "1"
+  },
+  {
+    "id": "9",
+    "agencyName": "부산도시공사",
+    "year": 2022,
+    "hiringCount": 22,
+    "category": "1"
+  },
+  {
+    "id": "10",
+    "agencyName": "부산도시공사",
+    "year": 2023,
+    "hiringCount": 26,
+    "category": "3"
+  },
+  {
+    "id": "11",
+    "agencyName": "부산도시공사",
+    "year": 2024,
+    "hiringCount": 16,
+    "category": "2"
+  },
+  {
+    "id": "12",
+    "agencyName": "부산시설공단",
+    "year": 2020,
+    "hiringCount": 33,
+    "category": "0"
+  },
+  {
+    "id": "13",
+    "agencyName": "부산시설공단",
+    "year": 2021,
+    "hiringCount": 58,
+    "category": "0"
+  },
+  {
+    "id": "14",
+    "agencyName": "부산시설공단",
+    "year": 2022,
+    "hiringCount": 21,
+    "category": "0"
+  },
+  {
+    "id": "15",
+    "agencyName": "부산시설공단",
+    "year": 2023,
+    "hiringCount": 47,
+    "category": "0"
+  },
+  {
+    "id": "16",
+    "agencyName": "부산시설공단",
+    "year": 2024,
+    "hiringCount": 52,
+    "category": "0"
+  },
+  {
+    "id": "17",
+    "agencyName": "부산환경공단",
+    "year": 2020,
+    "hiringCount": 91,
+    "category": "4"
+  },
+  {
+    "id": "18",
+    "agencyName": "부산환경공단",
+    "year": 2021,
+    "hiringCount": 65,
+    "category": "6"
+  },
+  {
+    "id": "19",
+    "agencyName": "부산환경공단",
+    "year": 2022,
+    "hiringCount": 47,
+    "category": "4"
+  },
+  {
+    "id": "20",
+    "agencyName": "부산환경공단",
+    "year": 2023,
+    "hiringCount": 28,
+    "category": "2"
+  },
+  {
+    "id": "21",
+    "agencyName": "부산환경공단",
+    "year": 2024,
+    "hiringCount": 40,
+    "category": "1"
+  },
+  {
+    "id": "22",
+    "agencyName": "부산관광공사",
+    "year": 2020,
+    "hiringCount": 2,
+    "category": "0"
+  },
+  {
+    "id": "23",
+    "agencyName": "부산관광공사",
+    "year": 2021,
+    "hiringCount": 5,
+    "category": "0"
+  },
+  {
+    "id": "24",
+    "agencyName": "부산관광공사",
+    "year": 2022,
+    "hiringCount": 2,
+    "category": "0"
+  },
+  {
+    "id": "25",
+    "agencyName": "부산관광공사",
+    "year": 2023,
+    "hiringCount": 4,
+    "category": "0"
+  },
+  {
+    "id": "26",
+    "agencyName": "부산관광공사",
+    "year": 2024,
+    "hiringCount": 5,
+    "category": "0"
+  }
+]
