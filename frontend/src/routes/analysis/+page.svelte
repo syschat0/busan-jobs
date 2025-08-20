@@ -50,7 +50,23 @@
 
 
   // 필터링된 데이터
-  $: data = filterAllData(rawData, filters);
+  $: data = (() => {
+    const filtered = filterAllData(rawData, filters);
+    console.log('필터 적용 결과:', {
+      filters,
+      원본: {
+        jobs: rawData.jobs.length,
+        competition: rawData.competition.length,
+        hiring: rawData.hiring.length
+      },
+      필터링후: {
+        jobs: filtered.jobs.length,
+        competition: filtered.competition.length,
+        hiring: filtered.hiring.length
+      }
+    });
+    return filtered;
+  })();
 
   // 계산된 통계
   let stats = {

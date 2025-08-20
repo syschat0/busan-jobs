@@ -119,11 +119,11 @@
 
   // 필터 초기화
   function resetFilters() {
-    filters = {
-      years: [],
-      categories: [],
-      agencies: []
-    };
+    console.log('필터 초기화');
+    filters.years = [];
+    filters.categories = [];
+    filters.agencies = [];
+    filters = filters; // 강제 리액티브 업데이트
   }
 
   // 그리드 토글
@@ -166,15 +166,21 @@
 
   // 필터 변경 핸들러
   function handleYearChange(event) {
+    console.log('연도 필터 변경:', event.detail);
     filters.years = event.detail;
+    filters = filters; // 강제 리액티브 업데이트
   }
 
   function handleCategoryChange(event) {
+    console.log('직렬 필터 변경:', event.detail);
     filters.categories = event.detail;
+    filters = filters; // 강제 리액티브 업데이트
   }
 
   function handleAgencyChange(event) {
+    console.log('기관 필터 변경:', event.detail);
     filters.agencies = event.detail;
+    filters = filters; // 강제 리액티브 업데이트
   }
 
 </script>

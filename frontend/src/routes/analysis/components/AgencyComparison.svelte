@@ -3,14 +3,24 @@
   
   export let data = { jobs: [], competition: [], hiring: [] };
 
-  // 기관별 종합 분석
-  $: agencyAnalysis = analyzeAgencies();
+  // 데이터 변경 감지 로깅
+  $: {
+    console.log('AgencyComparison - 데이터 업데이트:', {
+      jobs: data.jobs.length,
+      competition: data.competition.length,
+      hiring: data.hiring.length,
+      timestamp: new Date().toISOString()
+    });
+  }
 
-  function analyzeAgencies() {
+  // 기관별 종합 분석
+  $: agencyAnalysis = analyzeAgencies(data);
+
+  function analyzeAgencies(currentData) {
     const agencies = {};
 
     // 채용공고 데이터 분석
-    data.jobs.forEach(job => {
+    currentData.jobs.forEach(job => {
       const agency = job.기관명 || 'Unknown';
       if (!agencies[agency]) {
         agencies[agency] = {
@@ -36,7 +46,7 @@
     });
 
     // 경쟁률 데이터 연결
-    data.competition.forEach(comp => {
+    currentData.competition.forEach(comp => {
       const agency = comp.기관명 || 'Unknown';
       if (agencies[agency]) {
         const rate = parseFloat(comp.경쟁률 || '0');
@@ -47,7 +57,7 @@
     });
 
     // 채용인원 데이터 연결
-    data.hiring.forEach(hire => {
+    currentData.hiring.forEach(hire => {
       const agency = hire.agencyName || hire.기관명 || 'Unknown';
       if (agencies[agency]) {
         agencies[agency].hiring.push(hire);
@@ -79,9 +89,20 @@
       agency.activityScore = agency.jobs.length + (agency.totalHiring / 10) - (agency.avgCompetition / 10);
     });
 
-    return Object.values(agencies)
+    const result = Object.values(agencies)
       .filter(agency => agency.jobs.length > 0)
       .sort((a, b) => b.jobs.length - a.jobs.length);
+    
+    console.log('분석 결과:', {
+      기관수: result.length,
+      기관목록: result.map(a => ({
+        name: a.name,
+        jobs: a.jobs.length,
+        competition: a.avgCompetition
+      }))
+    });
+    
+    return result;
   }
 
   // 경쟁률 수준 표시
@@ -212,61 +233,187 @@
 
   <!-- 종합 인사이트 -->
   {#if agencyAnalysis.length > 0}
+    {@const totalJobs = agencyAnalysis.reduce((sum, a) => sum + a.jobs.length, 0)}
+    {@const totalHiring = agencyAnalysis.reduce((sum, a) => sum + a.totalHiring, 0)}
+    {@const agenciesWithCompetition = agencyAnalysis.filter(a => a.avgCompetition > 0)}
+    {@const avgOverallCompetition = agenciesWithCompetition.length > 0 
+      ? agenciesWithCompetition.reduce((sum, a) => sum + a.avgCompetition, 0) / agenciesWithCompetition.length 
+      : 0}
+    
     <div class="bg-blue-50 rounded-xl p-6">
       <div class="flex items-start space-x-3">
         <div class="p-2 bg-blue-100 rounded-lg">
           <TrendingUp size={20} class="text-blue-600" />
         </div>
         <div class="flex-1">
-          <h3 class="text-lg font-semibold text-blue-900 mb-3">📊 기관별 분석 인사이트</h3>
+          <h3 class="text-lg font-semibold text-blue-900 mb-3">
+            📊 기관별 분석 인사이트 
+            <span class="text-sm font-normal text-blue-700">
+              (필터: {totalJobs}건 / {agencyAnalysis.length}개 기관)
+            </span>
+          </h3>
           
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
             <!-- 가장 활발한 기관 -->
-            <div class="bg-white rounded-lg p-3">
-              <div class="font-semibold mb-1">🔥 가장 활발한 채용</div>
-              <div>
-                <strong>{agencyAnalysis[0].name}</strong>이 
-                {agencyAnalysis[0].jobs.length}건의 공고로 가장 활발한 채용활동을 보입니다.
+            {#if agencyAnalysis.length > 0}
+              {@const topAgency = agencyAnalysis[0]}
+              <div class="bg-white rounded-lg p-3">
+                <div class="font-semibold mb-1 flex items-center gap-1">
+                  🔥 <span>채용 규모 1위</span>
+                </div>
+                <div>
+                  <strong class="text-blue-900">{topAgency.name}</strong>이 
+                  <span class="font-bold text-blue-600">{topAgency.jobs.length}건</span>의 공고로 
+                  필터링된 조건에서 가장 활발한 채용활동을 보입니다.
+                  {#if topAgency.totalHiring > 0}
+                    <div class="text-xs text-gray-600 mt-1">
+                      총 {topAgency.totalHiring}명 채용 예정
+                    </div>
+                  {/if}
+                </div>
               </div>
-            </div>
+            {/if}
 
             <!-- 경쟁률이 낮은 기관 -->
-            {#if agencyAnalysis.filter(a => a.avgCompetition > 0).length > 0}
-              {@const lowCompetitionAgency = agencyAnalysis
-                .filter(a => a.avgCompetition > 0)
+            {#if agenciesWithCompetition.length > 0}
+              {@const lowCompetitionAgency = agenciesWithCompetition
                 .sort((a, b) => a.avgCompetition - b.avgCompetition)[0]}
               <div class="bg-white rounded-lg p-3">
-                <div class="font-semibold mb-1">🎯 진입 기회</div>
+                <div class="font-semibold mb-1 flex items-center gap-1">
+                  🎯 <span>낮은 경쟁률</span>
+                </div>
                 <div>
-                  <strong>{lowCompetitionAgency.name}</strong>이 
-                  평균 {lowCompetitionAgency.avgCompetition.toFixed(1)}:1로 
-                  상대적으로 경쟁률이 낮습니다.
+                  <strong class="text-green-900">{lowCompetitionAgency.name}</strong>이 
+                  평균 <span class="font-bold text-green-600">{lowCompetitionAgency.avgCompetition.toFixed(1)}:1</span>로 
+                  필터링된 조건에서 가장 진입하기 유리합니다.
+                  <div class="text-xs text-gray-600 mt-1">
+                    {lowCompetitionAgency.competition.length}개 데이터 기준
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <div class="bg-white rounded-lg p-3">
+                <div class="font-semibold mb-1 flex items-center gap-1">
+                  📊 <span>경쟁률 정보</span>
+                </div>
+                <div class="text-gray-600">
+                  필터링된 조건에서는 경쟁률 데이터가 없습니다.
+                  다른 조건을 선택해 보세요.
                 </div>
               </div>
             {/if}
 
             <!-- 다양한 직렬 -->
             {#if agencyAnalysis.length > 0}
-              {@const diverseAgency = agencyAnalysis
+              {@const diverseAgency = [...agencyAnalysis]
                 .sort((a, b) => b.categories.size - a.categories.size)[0]}
-              <div class="bg-white rounded-lg p-3">
-                <div class="font-semibold mb-1">🌟 다양한 기회</div>
-                <div>
-                  <strong>{diverseAgency.name}</strong>에서 
-                  {diverseAgency.categories.size}개 직렬로 
-                  다양한 분야의 기회를 제공합니다.
+              {#if diverseAgency.categories.size > 0}
+                <div class="bg-white rounded-lg p-3">
+                  <div class="font-semibold mb-1 flex items-center gap-1">
+                    🌟 <span>직렬 다양성</span>
+                  </div>
+                  <div>
+                    <strong class="text-purple-900">{diverseAgency.name}</strong>에서 
+                    <span class="font-bold text-purple-600">{diverseAgency.categories.size}개 직렬</span>로 
+                    필터 조건 내에서 가장 다양한 분야의 기회를 제공합니다.
+                    <div class="text-xs text-gray-600 mt-1 flex flex-wrap gap-1">
+                      {#each Array.from(diverseAgency.categories).slice(0, 3) as cat}
+                        <span class="px-1 bg-gray-100 rounded">{cat}</span>
+                      {/each}
+                      {#if diverseAgency.categories.size > 3}
+                        <span class="text-gray-500">외 {diverseAgency.categories.size - 3}개</span>
+                      {/if}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              {/if}
             {/if}
 
-            <!-- 총합 통계 -->
+            <!-- 종합 통계와 필터 현황 -->
             <div class="bg-white rounded-lg p-3">
-              <div class="font-semibold mb-1">📈 전체 현황</div>
-              <div>
-                총 {agencyAnalysis.length}개 기관에서 
-                {agencyAnalysis.reduce((sum, a) => sum + a.jobs.length, 0)}건의 
-                채용공고를 제공하고 있습니다.
+              <div class="font-semibold mb-1 flex items-center gap-1">
+                📈 <span>필터링 결과 요약</span>
               </div>
+              <div>
+                현재 필터로 <span class="font-bold text-indigo-600">{agencyAnalysis.length}개 기관</span>에서 
+                <span class="font-bold text-indigo-600">{totalJobs}건</span>의 
+                채용공고가 검색되었습니다.
+                <div class="text-xs text-gray-600 mt-1">
+                  총 채용예정: {totalHiring}명
+                  {#if avgOverallCompetition > 0}
+                    | 평균 경쟁률: {avgOverallCompetition.toFixed(1)}:1
+                  {/if}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 추가 인사이트 (더 자세한 분석) -->
+          <div class="mt-4 pt-4 border-t border-blue-200">
+            <div class="text-xs text-blue-700">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- 평균 경쟁률 -->
+                {#if agenciesWithCompetition.length > 0}
+                  <div class="text-center">
+                    <div class="font-semibold">필터 내 평균 경쟁률</div>
+                    <div class="text-lg font-bold text-blue-600">{avgOverallCompetition.toFixed(1)}:1</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      {agenciesWithCompetition.length}개 기관
+                    </div>
+                  </div>
+                {:else}
+                  <div class="text-center">
+                    <div class="font-semibold">평균 경쟁률</div>
+                    <div class="text-lg font-bold text-gray-400">-</div>
+                    <div class="text-xs text-gray-500 mt-1">
+                      데이터 없음
+                    </div>
+                  </div>
+                {/if}
+
+                <!-- 최고 채용 규모 -->
+                <div class="text-center">
+                  <div class="font-semibold">최대 공고수</div>
+                  <div class="text-lg font-bold text-green-600">{Math.max(...agencyAnalysis.map(a => a.jobs.length))}건</div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    {agencyAnalysis.find(a => a.jobs.length === Math.max(...agencyAnalysis.map(a => a.jobs.length)))?.name.slice(0, 6)}
+                  </div>
+                </div>
+
+                <!-- 전체 직렬 수 -->
+                <div class="text-center">
+                  <div class="font-semibold">필터 내 직렬</div>
+                  <div class="text-lg font-bold text-purple-600">{(() => {
+                    const allCategories = new Set();
+                    agencyAnalysis.forEach(agency => {
+                      Array.from(agency.categories).forEach(cat => {
+                        allCategories.add(cat);
+                      });
+                    });
+                    return allCategories.size;
+                  })()}개</div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    {agencyAnalysis.length}개 기관
+                  </div>
+                </div>
+
+                <!-- 총 채용예정 -->
+                <div class="text-center">
+                  <div class="font-semibold">총 채용예정</div>
+                  <div class="text-lg font-bold text-amber-600">{totalHiring}명</div>
+                  <div class="text-xs text-gray-500 mt-1">
+                    필터 조건 합계
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 필터 적용 안내 -->
+              {#if totalJobs < 50}
+                <div class="mt-3 p-2 bg-yellow-50 rounded-lg text-yellow-800">
+                  💡 현재 필터 조건으로 {totalJobs}건의 채용공고만 표시됩니다. 
+                  더 많은 정보를 보려면 필터 조건을 완화해 보세요.
+                </div>
+              {/if}
             </div>
           </div>
         </div>
