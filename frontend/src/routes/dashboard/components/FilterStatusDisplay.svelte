@@ -1,5 +1,5 @@
 <script>
-  import { Filter, X, Calendar, Briefcase, Building, ChevronRight, Settings, Eye, EyeOff } from 'lucide-svelte';
+  import { Filter, X, Calendar, Briefcase, Building, ChevronRight, Settings, Eye, EyeOff, ChevronDown, Check } from 'lucide-svelte';
   
   export let filters = {
     years: [],
@@ -12,6 +12,11 @@
   // 사이드 패널 상태
   let isExpanded = false;
   let isVisible = true;
+  
+  // 드롭다운 상태
+  let isYearDropdownOpen = false;
+  let isCategoryDropdownOpen = false;
+  let isAgencyDropdownOpen = false;
 
   // 활성 필터 개수 계산
   $: yearOptions = (() => {
@@ -64,10 +69,21 @@
     return Array.from(agencySet);
   })();
 
+  // 필터 상태 계산 (전체 선택도 명시적으로 표시)
+  $: hasPartialYearFilter = filters.years.length > 0 && filters.years.length < yearOptions.length;
+  $: hasPartialCategoryFilter = filters.categories.length > 0 && filters.categories.length < categoryOptions.length;
+  $: hasPartialAgencyFilter = filters.agencies.length > 0 && filters.agencies.length < agencyOptions.length;
+  
   $: activeFiltersCount = 
-    (filters.years.length > 0 && filters.years.length < yearOptions.length ? filters.years.length : 0) +
-    (filters.categories.length > 0 && filters.categories.length < categoryOptions.length ? filters.categories.length : 0) +
-    (filters.agencies.length > 0 && filters.agencies.length < agencyOptions.length ? filters.agencies.length : 0);
+    (hasPartialYearFilter ? filters.years.length : 0) +
+    (hasPartialCategoryFilter ? filters.categories.length : 0) +
+    (hasPartialAgencyFilter ? filters.agencies.length : 0);
+    
+  // 표시할 필터 섹션 개수 (전체 선택 포함)
+  $: displayedSectionsCount = 
+    (yearOptions.length > 0 ? 1 : 0) +
+    (categoryOptions.length > 0 ? 1 : 0) +
+    (agencyOptions.length > 0 ? 1 : 0);
 
   // 필터 제거 함수들
   function removeYearFilter(year) {
@@ -93,6 +109,62 @@
     };
   }
 
+  // 개별 필터 추가 함수들
+  function addYearFilter(year) {
+    if (!filters.years.includes(year)) {
+      filters.years = [...filters.years, year];
+      filters = { ...filters }; // 반응성 트리거
+    }
+  }
+
+  function addCategoryFilter(category) {
+    if (!filters.categories.includes(category)) {
+      filters.categories = [...filters.categories, category];
+      filters = { ...filters }; // 반응성 트리거
+    }
+  }
+
+  function addAgencyFilter(agency) {
+    if (!filters.agencies.includes(agency)) {
+      filters.agencies = [...filters.agencies, agency];
+      filters = { ...filters }; // 반응성 트리거
+    }
+  }
+
+  // 전체 선택 토글 함수들
+  function toggleAllYears() {
+    if (hasPartialYearFilter) {
+      // 부분 선택 상태 → 전체 선택 (모든 필터 해제)
+      filters.years = [];
+    } else {
+      // 전체 선택 상태 → 부분 선택 (첫 번째 항목만 선택)
+      filters.years = yearOptions.length > 0 ? [yearOptions[0]] : [];
+    }
+    filters = { ...filters };
+  }
+
+  function toggleAllCategories() {
+    if (hasPartialCategoryFilter) {
+      // 부분 선택 상태 → 전체 선택 (모든 필터 해제)
+      filters.categories = [];
+    } else {
+      // 전체 선택 상태 → 부분 선택 (첫 번째 항목만 선택)
+      filters.categories = categoryOptions.length > 0 ? [categoryOptions[0]] : [];
+    }
+    filters = { ...filters };
+  }
+
+  function toggleAllAgencies() {
+    if (hasPartialAgencyFilter) {
+      // 부분 선택 상태 → 전체 선택 (모든 필터 해제)
+      filters.agencies = [];
+    } else {
+      // 전체 선택 상태 → 부분 선택 (첫 번째 항목만 선택)
+      filters.agencies = agencyOptions.length > 0 ? [agencyOptions[0]] : [];
+    }
+    filters = { ...filters };
+  }
+
   // 필터링 효과 계산
   $: totalOriginal = data.jobs.length + data.competition.length + data.hiring.length;
   $: totalFiltered = filteredData.jobs.length + filteredData.competition.length + filteredData.hiring.length;
@@ -106,7 +178,70 @@
   function toggleVisibility() {
     isVisible = !isVisible;
   }
+  
+  // 드롭다운 토글
+  function toggleYearDropdown() {
+    isYearDropdownOpen = !isYearDropdownOpen;
+    isCategoryDropdownOpen = false;
+    isAgencyDropdownOpen = false;
+  }
+  
+  function toggleCategoryDropdown() {
+    isCategoryDropdownOpen = !isCategoryDropdownOpen;
+    isYearDropdownOpen = false;
+    isAgencyDropdownOpen = false;
+  }
+  
+  function toggleAgencyDropdown() {
+    isAgencyDropdownOpen = !isAgencyDropdownOpen;
+    isYearDropdownOpen = false;
+    isCategoryDropdownOpen = false;
+  }
+  
+  // 전체 선택/해제 (GlobalFilters와 동일한 로직)
+  function toggleAllYearsCheckbox() {
+    if (filters.years.length === yearOptions.length) {
+      filters.years = [];
+    } else {
+      filters.years = [...yearOptions];
+    }
+    filters = { ...filters };
+  }
+  
+  function toggleAllCategoriesCheckbox() {
+    if (filters.categories.length === categoryOptions.length) {
+      filters.categories = [];
+    } else {
+      filters.categories = [...categoryOptions];
+    }
+    filters = { ...filters };
+  }
+  
+  function toggleAllAgenciesCheckbox() {
+    if (filters.agencies.length === agencyOptions.length) {
+      filters.agencies = [];
+    } else {
+      filters.agencies = [...agencyOptions];
+    }
+    filters = { ...filters };
+  }
+  
+  // 외부 클릭 감지로 드롭다운 닫기
+  function handleClickOutside(event) {
+    // 드롭다운이 열려있고 클릭한 대상이 드롭다운 내부가 아닌 경우
+    if (isYearDropdownOpen || isCategoryDropdownOpen || isAgencyDropdownOpen) {
+      const target = event.target;
+      const isInsideDropdown = target.closest('.dropdown-container');
+      if (!isInsideDropdown) {
+        isYearDropdownOpen = false;
+        isCategoryDropdownOpen = false;
+        isAgencyDropdownOpen = false;
+      }
+    }
+  }
 </script>
+
+<svelte:window on:click={handleClickOutside} />
 
 <!-- 필터 상태 표시 사이드 패널 -->
 {#if isVisible}
@@ -124,9 +259,9 @@
           <h3 class="text-sm font-semibold text-gray-900">필터 상태</h3>
           <p class="text-xs text-gray-500">
             {#if activeFiltersCount > 0}
-              {activeFiltersCount}개 활성 • {totalFiltered}건 결과
+              {activeFiltersCount}개 부분선택 • {totalFiltered}건 결과
             {:else}
-              모든 데이터 표시 • {totalOriginal}건 결과
+              {displayedSectionsCount}개 전체선택 • {totalOriginal}건 결과
             {/if}
           </p>
         </div>
@@ -194,102 +329,321 @@
             </h4>
           </div>
           
-          {#if activeFiltersCount === 0}
-            <div class="text-center py-6">
-              <div class="p-3 bg-gray-50 rounded-lg mb-3">
-                <Filter size={24} class="mx-auto text-gray-400 mb-2" />
-                <p class="text-sm text-gray-600 font-medium">적용된 필터가 없습니다</p>
-                <p class="text-xs text-gray-500 mt-1">전체 데이터가 표시되고 있습니다</p>
-              </div>
-              <p class="text-xs text-gray-500">
-                상단의 필터 메뉴에서 년도, 직렬, 기관을 선택하여<br>
-                원하는 조건의 데이터만 확인할 수 있습니다.
-              </p>
-            </div>
-          {/if}
-          
-          <!-- 년도 필터 -->
-          {#if filters.years.length > 0 && filters.years.length < yearOptions.length}
-            <div class="bg-white border border-gray-100 rounded-lg p-3">
+          <!-- 필터 섹션들 -->
+          {#if yearOptions.length > 0}
+            <!-- 년도 필터 섹션 -->
+            <div class="dropdown-container bg-white border border-gray-100 rounded-lg p-3">
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center space-x-2">
                   <Calendar size={14} class="text-blue-500" />
                   <span class="text-sm font-medium text-gray-700">년도</span>
                 </div>
-                <span class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                  {filters.years.length}개 선택
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                {#each filters.years as year}
-                  <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md text-xs font-medium transition-colors">
-                    {year}
-                    <button
-                      on:click={() => removeYearFilter(year)}
-                      class="ml-1.5 hover:bg-blue-300 rounded-full p-0.5 transition-colors"
-                    >
-                      <X size={10} />
-                    </button>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full {hasPartialYearFilter ? 'bg-blue-100 text-blue-700' : 'bg-blue-100 text-blue-700'}">
+                    {hasPartialYearFilter ? `${filters.years.length}개 선택` : '전체 선택'}
                   </span>
-                {/each}
+                  <!-- 드롭다운 버튼 -->
+                  <button
+                    on:click={toggleYearDropdown}
+                    class="text-xs px-2 py-0.5 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded transition-colors flex items-center space-x-1"
+                  >
+                    <span>선택</span>
+                    <ChevronDown size={10} class="transform transition-transform {isYearDropdownOpen ? 'rotate-180' : ''}" />
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 드롭다운 메뉴 -->
+              {#if isYearDropdownOpen}
+                <div class="relative mb-3">
+                  <div class="absolute z-20 w-full bg-white shadow-lg max-h-48 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto border">
+                    <!-- 전체 선택/해제 옵션 -->
+                    <div class="px-3 py-2 border-b border-gray-100">
+                      <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            checked={filters.years.length === yearOptions.length}
+                            indeterminate={filters.years.length > 0 && filters.years.length < yearOptions.length}
+                            on:change={toggleAllYearsCheckbox}
+                            class="sr-only"
+                          />
+                          <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.years.length === yearOptions.length ? 'bg-blue-500 border-blue-500' : filters.years.length > 0 ? 'bg-blue-100 border-blue-300' : ''}">
+                            {#if filters.years.length === yearOptions.length}
+                              <Check size={12} class="text-white" />
+                            {:else if filters.years.length > 0}
+                              <div class="w-2 h-0.5 bg-blue-500 rounded"></div>
+                            {/if}
+                          </div>
+                        </div>
+                        <span class="ml-3 text-sm text-gray-700 font-medium">전체 년도</span>
+                      </label>
+                    </div>
+                    
+                    <!-- 개별 년도 옵션들 -->
+                    {#each yearOptions as year}
+                      <div class="px-3 py-1">
+                        <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                          <div class="relative">
+                            <input
+                              type="checkbox"
+                              checked={filters.years.includes(year)}
+                              on:change={() => {
+                                if (filters.years.includes(year)) {
+                                  removeYearFilter(year);
+                                } else {
+                                  addYearFilter(year);
+                                }
+                              }}
+                              class="sr-only"
+                            />
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.years.includes(year) ? 'bg-blue-500 border-blue-500' : ''}">
+                              {#if filters.years.includes(year)}
+                                <Check size={12} class="text-white" />
+                              {/if}
+                            </div>
+                          </div>
+                          <span class="ml-3 text-sm text-gray-700">{year}</span>
+                        </label>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              
+              <!-- 선택된 항목들 표시 -->
+              <div class="flex flex-wrap gap-1.5">
+                {#if hasPartialYearFilter}
+                  {#each filters.years as year}
+                    <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 rounded-md text-xs font-medium transition-colors">
+                      {year}
+                      <button
+                        on:click={() => removeYearFilter(year)}
+                        class="ml-1.5 hover:bg-blue-300 rounded-full p-0.5 transition-colors"
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  {/each}
+                {:else}
+                  <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md text-xs font-medium">
+                    전체 년도 ({yearOptions.length}개)
+                  </span>
+                {/if}
               </div>
             </div>
           {/if}
-
-          <!-- 직렬 필터 -->
-          {#if filters.categories.length > 0 && filters.categories.length < categoryOptions.length}
-            <div class="bg-white border border-gray-100 rounded-lg p-3">
+          
+          {#if categoryOptions.length > 0}
+            <!-- 직렬 필터 섹션 -->
+            <div class="dropdown-container bg-white border border-gray-100 rounded-lg p-3">
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center space-x-2">
                   <Briefcase size={14} class="text-green-500" />
                   <span class="text-sm font-medium text-gray-700">직렬</span>
                 </div>
-                <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-                  {filters.categories.length}개 선택
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                {#each filters.categories as category}
-                  <span class="inline-flex items-center px-2.5 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded-md text-xs font-medium transition-colors">
-                    {category.length > 12 ? category.slice(0, 12) + '...' : category}
-                    <button
-                      on:click={() => removeCategoryFilter(category)}
-                      class="ml-1.5 hover:bg-green-300 rounded-full p-0.5 transition-colors"
-                      title={category}
-                    >
-                      <X size={10} />
-                    </button>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                    {hasPartialCategoryFilter ? `${filters.categories.length}개 선택` : '전체 선택'}
                   </span>
-                {/each}
+                  <!-- 드롭다운 버튼 -->
+                  <button
+                    on:click={toggleCategoryDropdown}
+                    class="text-xs px-2 py-0.5 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors flex items-center space-x-1"
+                  >
+                    <span>선택</span>
+                    <ChevronDown size={10} class="transform transition-transform {isCategoryDropdownOpen ? 'rotate-180' : ''}" />
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 드롭다운 메뉴 -->
+              {#if isCategoryDropdownOpen}
+                <div class="relative mb-3">
+                  <div class="absolute z-20 w-full bg-white shadow-lg max-h-48 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto border">
+                    <!-- 전체 선택/해제 옵션 -->
+                    <div class="px-3 py-2 border-b border-gray-100">
+                      <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            checked={filters.categories.length === categoryOptions.length}
+                            indeterminate={filters.categories.length > 0 && filters.categories.length < categoryOptions.length}
+                            on:change={toggleAllCategoriesCheckbox}
+                            class="sr-only"
+                          />
+                          <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.categories.length === categoryOptions.length ? 'bg-green-500 border-green-500' : filters.categories.length > 0 ? 'bg-green-100 border-green-300' : ''}">
+                            {#if filters.categories.length === categoryOptions.length}
+                              <Check size={12} class="text-white" />
+                            {:else if filters.categories.length > 0}
+                              <div class="w-2 h-0.5 bg-green-500 rounded"></div>
+                            {/if}
+                          </div>
+                        </div>
+                        <span class="ml-3 text-sm text-gray-700 font-medium">전체 직렬</span>
+                      </label>
+                    </div>
+                    
+                    <!-- 개별 직렬 옵션들 -->
+                    {#each categoryOptions as category}
+                      <div class="px-3 py-1">
+                        <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                          <div class="relative">
+                            <input
+                              type="checkbox"
+                              checked={filters.categories.includes(category)}
+                              on:change={() => {
+                                if (filters.categories.includes(category)) {
+                                  removeCategoryFilter(category);
+                                } else {
+                                  addCategoryFilter(category);
+                                }
+                              }}
+                              class="sr-only"
+                            />
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.categories.includes(category) ? 'bg-green-500 border-green-500' : ''}">
+                              {#if filters.categories.includes(category)}
+                                <Check size={12} class="text-white" />
+                              {/if}
+                            </div>
+                          </div>
+                          <span class="ml-3 text-sm text-gray-700" title={category}>
+                            {category.length > 20 ? category.slice(0, 20) + '...' : category}
+                          </span>
+                        </label>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              
+              <!-- 선택된 항목들 표시 -->
+              <div class="flex flex-wrap gap-1.5">
+                {#if hasPartialCategoryFilter}
+                  {#each filters.categories as category}
+                    <span class="inline-flex items-center px-2.5 py-1 bg-green-100 hover:bg-green-200 text-green-800 rounded-md text-xs font-medium transition-colors">
+                      {category.length > 12 ? category.slice(0, 12) + '...' : category}
+                      <button
+                        on:click={() => removeCategoryFilter(category)}
+                        class="ml-1.5 hover:bg-green-300 rounded-full p-0.5 transition-colors"
+                        title={category}
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  {/each}
+                {:else}
+                  <span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-800 rounded-md text-xs font-medium">
+                    전체 직렬 ({categoryOptions.length}개)
+                  </span>
+                {/if}
               </div>
             </div>
           {/if}
-
-          <!-- 기관 필터 -->
-          {#if filters.agencies.length > 0 && filters.agencies.length < agencyOptions.length}
-            <div class="bg-white border border-gray-100 rounded-lg p-3">
+          
+          {#if agencyOptions.length > 0}
+            <!-- 기관 필터 섹션 -->
+            <div class="dropdown-container bg-white border border-gray-100 rounded-lg p-3">
               <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center space-x-2">
                   <Building size={14} class="text-purple-500" />
                   <span class="text-sm font-medium text-gray-700">기관</span>
                 </div>
-                <span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                  {filters.agencies.length}개 선택
-                </span>
-              </div>
-              <div class="flex flex-wrap gap-1.5">
-                {#each filters.agencies as agency}
-                  <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-md text-xs font-medium transition-colors">
-                    {agency.length > 15 ? agency.slice(0, 15) + '...' : agency}
-                    <button
-                      on:click={() => removeAgencyFilter(agency)}
-                      class="ml-1.5 hover:bg-purple-300 rounded-full p-0.5 transition-colors"
-                      title={agency}
-                    >
-                      <X size={10} />
-                    </button>
+                <div class="flex items-center space-x-2">
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                    {hasPartialAgencyFilter ? `${filters.agencies.length}개 선택` : '전체 선택'}
                   </span>
-                {/each}
+                  <!-- 드롭다운 버튼 -->
+                  <button
+                    on:click={toggleAgencyDropdown}
+                    class="text-xs px-2 py-0.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded transition-colors flex items-center space-x-1"
+                  >
+                    <span>선택</span>
+                    <ChevronDown size={10} class="transform transition-transform {isAgencyDropdownOpen ? 'rotate-180' : ''}" />
+                  </button>
+                </div>
+              </div>
+              
+              <!-- 드롭다운 메뉴 -->
+              {#if isAgencyDropdownOpen}
+                <div class="relative mb-3">
+                  <div class="absolute z-20 w-full bg-white shadow-lg max-h-48 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto border">
+                    <!-- 전체 선택/해제 옵션 -->
+                    <div class="px-3 py-2 border-b border-gray-100">
+                      <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                        <div class="relative">
+                          <input
+                            type="checkbox"
+                            checked={filters.agencies.length === agencyOptions.length}
+                            indeterminate={filters.agencies.length > 0 && filters.agencies.length < agencyOptions.length}
+                            on:change={toggleAllAgenciesCheckbox}
+                            class="sr-only"
+                          />
+                          <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.agencies.length === agencyOptions.length ? 'bg-purple-500 border-purple-500' : filters.agencies.length > 0 ? 'bg-purple-100 border-purple-300' : ''}">
+                            {#if filters.agencies.length === agencyOptions.length}
+                              <Check size={12} class="text-white" />
+                            {:else if filters.agencies.length > 0}
+                              <div class="w-2 h-0.5 bg-purple-500 rounded"></div>
+                            {/if}
+                          </div>
+                        </div>
+                        <span class="ml-3 text-sm text-gray-700 font-medium">전체 기관</span>
+                      </label>
+                    </div>
+                    
+                    <!-- 개별 기관 옵션들 -->
+                    {#each agencyOptions as agency}
+                      <div class="px-3 py-1">
+                        <label class="flex items-center cursor-pointer hover:bg-gray-50 px-2 py-1 rounded">
+                          <div class="relative">
+                            <input
+                              type="checkbox"
+                              checked={filters.agencies.includes(agency)}
+                              on:change={() => {
+                                if (filters.agencies.includes(agency)) {
+                                  removeAgencyFilter(agency);
+                                } else {
+                                  addAgencyFilter(agency);
+                                }
+                              }}
+                              class="sr-only"
+                            />
+                            <div class="w-4 h-4 border-2 border-gray-300 rounded flex items-center justify-center {filters.agencies.includes(agency) ? 'bg-purple-500 border-purple-500' : ''}">
+                              {#if filters.agencies.includes(agency)}
+                                <Check size={12} class="text-white" />
+                              {/if}
+                            </div>
+                          </div>
+                          <span class="ml-3 text-sm text-gray-700" title={agency}>
+                            {agency}
+                          </span>
+                        </label>
+                      </div>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              
+              <!-- 선택된 항목들 표시 -->
+              <div class="flex flex-wrap gap-1.5">
+                {#if hasPartialAgencyFilter}
+                  {#each filters.agencies as agency}
+                    <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 rounded-md text-xs font-medium transition-colors">
+                      {agency.length > 15 ? agency.slice(0, 15) + '...' : agency}
+                      <button
+                        on:click={() => removeAgencyFilter(agency)}
+                        class="ml-1.5 hover:bg-purple-300 rounded-full p-0.5 transition-colors"
+                        title={agency}
+                      >
+                        <X size={10} />
+                      </button>
+                    </span>
+                  {/each}
+                {:else}
+                  <span class="inline-flex items-center px-2.5 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium">
+                    전체 기관 ({agencyOptions.length}개)
+                  </span>
+                {/if}
               </div>
             </div>
           {/if}
