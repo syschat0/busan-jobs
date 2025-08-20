@@ -1,7 +1,7 @@
 <script>
   import '../app.css';
   import { page } from '$app/stores';
-  import { Building2, Calendar, BarChart3, Settings, Search, Heart } from 'lucide-svelte';
+  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart } from 'lucide-svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import { config } from '$lib/utils/config.js';
 </script>
@@ -44,6 +44,13 @@
             <span>검색</span>
           </a>
           <a 
+            href="/dashboard" 
+            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
+          >
+            <PieChart size={18} />
+            <span>대시보드</span>
+          </a>
+          <a 
             href="/calendar" 
             class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/calendar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
           >
@@ -56,6 +63,13 @@
           >
             <BarChart3 size={18} />
             <span>분석</span>
+          </a>
+          <a 
+            href="/datasheet" 
+            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/datasheet' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
+          >
+            <Grid3X3 size={18} />
+            <span>데이터시트</span>
           </a>
         </nav>
 
