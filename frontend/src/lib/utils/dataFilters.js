@@ -13,7 +13,7 @@ export function filterJobs(jobs, filters) {
     // 년도 필터 (다중 선택)
     if (filters.years && filters.years.length > 0) {
       const jobYear = job.공고시작일 ? new Date(job.공고시작일).getFullYear() : null;
-      const selectedYears = filters.years.map(y => parseInt(y.replace('년', '')));
+      const selectedYears = filters.years.map(y => typeof y === 'string' ? parseInt(y.replace('년', '')) : parseInt(y));
       if (!selectedYears.includes(jobYear)) {
         return false;
       }
@@ -51,7 +51,7 @@ export function filterCompetition(competition, filters) {
   return competition.filter(comp => {
     // 년도 필터 (다중 선택)
     if (filters.years && filters.years.length > 0) {
-      const selectedYears = filters.years.map(y => parseInt(y.replace('년', '')));
+      const selectedYears = filters.years.map(y => typeof y === 'string' ? parseInt(y.replace('년', '')) : parseInt(y));
       const compYear = parseInt(comp.연도);
       if (!selectedYears.includes(compYear)) {
         return false;
@@ -86,7 +86,7 @@ export function filterHiring(hiring, filters) {
   return hiring.filter(hire => {
     // 년도 필터 (다중 선택) - 실제 API 데이터 구조 사용
     if (filters.years && filters.years.length > 0) {
-      const selectedYears = filters.years.map(y => parseInt(y.replace('년', '')));
+      const selectedYears = filters.years.map(y => typeof y === 'string' ? parseInt(y.replace('년', '')) : parseInt(y));
       const hireYear = hire.연도 ? new Date(hire.연도).getFullYear() : null;
       if (!selectedYears.includes(hireYear)) {
         return false;
