@@ -44,13 +44,6 @@
             <span>검색</span>
           </a>
           <a 
-            href="/dashboard" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/dashboard' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
-            <PieChart size={18} />
-            <span>대시보드</span>
-          </a>
-          <a 
             href="/calendar" 
             class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/calendar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
           >
