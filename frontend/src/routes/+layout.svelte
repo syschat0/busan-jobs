@@ -1,14 +1,54 @@
 <script>
   import '../app.css';
   import { page } from '$app/stores';
-  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart } from 'lucide-svelte';
+  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain} from 'lucide-svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import { config } from '$lib/utils/config.js';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+
+
+  import { userInfo } from "$lib/stores/userStore";
+  async function checkSession() {
+    try {
+      const res = await fetch("http://localhost:8080/user/SessionInfo", {
+        method: "GET",
+        credentials: "include"
+      });
+      const result = await res.json();
+
+      if (result.RESULT === "OK") {
+        userInfo.set(result.USER);   // store 갱신
+      } else {
+        userInfo.set(null);
+      }
+    } catch (e) {
+      console.error("세션 확인 오류:", e);
+      userInfo.set(null);
+    }
+  }
+
+  async function logout() {
+    try {
+      await fetch("http://localhost:8080/user/Logout", {
+        method: "POST",
+        credentials: "include"
+      });
+      userInfo.set(null);  // 로그아웃 시 store 초기화
+      goto("/");
+    } catch (e) {
+      console.error("로그아웃 오류:", e);
+    }
+  }
+
+  onMount(() => {
+    checkSession();
+  });
 </script>
 
 <svelte:head>
   <title>{config.siteName} - {config.siteDescription}</title>
-  <meta name="description" content="{config.siteDescription}" />
+  <meta name="description" content={config.siteDescription} />
 </svelte:head>
 
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-orange-50">
@@ -29,51 +69,48 @@
 
         <!-- Navigation -->
         <nav class="hidden md:flex items-center space-x-1">
-          <a 
-            href="/" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
+          <a href="/" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <Search size={18} />
             <span>홈</span>
           </a>
-          <a 
-            href="/search" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/search' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
+          <a href="/search" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/search' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <Search size={18} />
             <span>검색</span>
           </a>
-          <a 
-            href="/calendar" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/calendar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
+          <a href="/calendar" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/calendar' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <Calendar size={18} />
             <span>캘린더</span>
           </a>
-          <a 
-            href="/analysis" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/analysis' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
+          <a href="/analysis" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/analysis' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <BarChart3 size={18} />
             <span>분석</span>
           </a>
-          <a 
-            href="/datasheet" 
-            class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/datasheet' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
-          >
-            <Grid3X3 size={18} />
-            <span>데이터시트</span>
+
+          <a href="/aimatch" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/aimatch' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
+            <Brain size={18} />
+            <span>AI매칭</span>
           </a>
         </nav>
 
-        <!-- Mobile menu button & User actions -->
+        <!-- User actions -->
         <div class="flex items-center space-x-2">
-          <button class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-            <Heart size={20} />
-          </button>
-          <button class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors">
-            <Settings size={20} />
-          </button>
+          {#if $userInfo}
+            <span class="text-gray-700 font-medium">{$userInfo.name} 님 안녕하세요 👋</span>
+            <button
+                    class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    on:click={logout}
+            >
+              <LogOut size={20} />
+              <span>로그아웃</span>
+            </button>
+          {:else}
+            <a href="/login"
+               class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/login' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
+            >
+              <LogIn size={20} />
+              <span>로그인</span>
+            </a>
+          {/if}
         </div>
       </div>
     </div>
@@ -105,7 +142,7 @@
             <p>🏢 부산교통공사 • 부산도시공사 • 부산시설공단 • 부산환경공단 • 부산관광공사</p>
           </div>
         </div>
-        
+
         <div>
           <h3 class="font-semibold mb-4">서비스</h3>
           <ul class="space-y-2 text-sm text-gray-400">
@@ -115,7 +152,7 @@
             <li><a href="/tools/resume" class="hover:text-white transition-colors">AI 자기소개서</a></li>
           </ul>
         </div>
-        
+
         <div>
           <h3 class="font-semibold mb-4">지원</h3>
           <ul class="space-y-2 text-sm text-gray-400">
@@ -125,13 +162,13 @@
           </ul>
         </div>
       </div>
-      
+
       <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
         <p>© 2024 {config.siteName}. Made with ❤️ for 부산 청년들</p>
       </div>
     </div>
   </footer>
-  
+
   <!-- Toast Notifications -->
   <Toast />
 </div>
