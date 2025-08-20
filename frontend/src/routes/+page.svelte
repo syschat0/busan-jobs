@@ -52,6 +52,7 @@
           <TrendingUp size={20} />
           <span>트렌드 분석</span>
         </a>
+
       </div>
     </div>
   </section>
@@ -91,50 +92,52 @@
     </div>
   </section>
   
-  <!-- 참여기관 현황 - 극도로 압축된 디자인 -->
-  <section class="space-y-3 bg-red-50 border border-red-200 rounded-lg p-4">
+  <!-- 참여기관 현황 -->
+  <section class="space-y-8">
     <div class="text-center">
-      <h2 class="text-lg font-bold mb-1 text-red-600">참여기관 현황 (압축 버전)</h2>
-      <p class="text-gray-600 text-xs">부산시 산하 5개 공사/공단</p>
+      <h2 class="text-subheading mb-2">참여기관 현황</h2>
+      <p class="text-gray-600">부산시 산하 5개 공사/공단의 채용정보를 통합 제공</p>
     </div>
     
-    <!-- 테이블형 초압축 레이아웃 -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-xs">
-        <thead>
-          <tr class="border-b border-gray-200">
-            <th class="text-left py-1 px-2 font-semibold text-gray-700">기관명</th>
-            <th class="text-center py-1 px-2 font-semibold text-gray-700">진행중</th>
-            <th class="text-center py-1 px-2 font-semibold text-gray-700">경쟁률</th>
-            <th class="text-left py-1 px-2 font-semibold text-gray-700">주요직렬</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each $agenciesWithStats.slice(0, 5) as agency}
-            <tr class="border-b border-gray-100 hover:bg-blue-50 transition-colors">
-              <td class="py-2 px-2">
-                <div class="flex items-center space-x-2">
-                  <div class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center">
-                    <span class="font-bold text-xs">{agency.name.slice(2, 4)}</span>
-                  </div>
-                  <span class="font-medium text-gray-900 text-xs">{agency.name}</span>
-                </div>
-              </td>
-              <td class="text-center py-2 px-2">
-                <span class="font-bold text-blue-600">{agency.stats?.totalJobs || 0}</span>
-              </td>
-              <td class="text-center py-2 px-2">
-                <span class="font-medium text-gray-900">{agency.stats.avgCompetition}</span>
-              </td>
-              <td class="py-2 px-2">
-                <span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-                  {(agency.stats.popularCategories || ['운영직'])[0]}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {#each $agenciesWithStats.slice(0, 5) as agency}
+        <div class="card p-6 hover:shadow-xl transition-all duration-300 group animate-fade-in">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center">
+                <span class="text-white font-bold text-sm">{agency.name.slice(2, 4)}</span>
+              </div>
+              <div>
+                <h3 class="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  {agency.name}
+                </h3>
+                <p class="text-sm text-gray-500">{agency.type}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-gray-500">진행중</span>
+              <div class="font-semibold text-blue-600">{agency.stats?.totalJobs || 0}건</div>
+            </div>
+            <div>
+              <span class="text-gray-500">평균 경쟁률</span>
+              <div class="font-semibold text-gray-900">{agency.stats.avgCompetition}</div>
+            </div>
+          </div>
+          
+          <div class="mt-4 pt-4 border-t border-gray-100">
+            <div class="flex flex-wrap gap-1">
+              {#each agency.stats.popularCategories || ['운영직', '기술직', '행정직'] as category}
+                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                  {category}
                 </span>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+              {/each}
+            </div>
+          </div>
+        </div>
+      {/each}
     </div>
   </section>
   
