@@ -1,7 +1,7 @@
 <script>
   import '../app.css';
   import { page } from '$app/stores';
-  import {Building2, Calendar, BarChart3, Search, LogIn, LogOut, Airplay, AirVentIcon, Brain} from 'lucide-svelte';
+  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain} from 'lucide-svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import { config } from '$lib/utils/config.js';
   import { onMount } from 'svelte';

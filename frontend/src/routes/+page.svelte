@@ -52,7 +52,6 @@
           <TrendingUp size={20} />
           <span>트렌드 분석</span>
         </a>
-
       </div>
     </div>
   </section>
