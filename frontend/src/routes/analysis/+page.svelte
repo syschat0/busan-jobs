@@ -26,6 +26,7 @@
   import MonthlyTrends from './components/MonthlyTrends.svelte';
   import GlobalFilters from './components/GlobalFilters.svelte';
   import FilterStatusDisplay from './components/FilterStatusDisplay.svelte';
+  import PassingScorePrediction from './components/PassingScorePrediction.svelte';
 
   // 데이터 상태
   let rawData = {
@@ -383,6 +384,24 @@
         </div>
       </div>
       <AgencyComparison {data} />
+    </section>
+
+    <!-- 합격선 예측 -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-900">합격선 예측 분석</h2>
+        <div class="text-sm text-gray-500">
+          과거 데이터 기반 2025년 예측
+          {#if (filters.years.length > 0 && filters.years.length < new Set(rawData.jobs.map(job => job.공고시작일 ? new Date(job.공고시작일).getFullYear() : null).filter(y => y)).size) || 
+               (filters.categories.length > 0 && filters.categories.length < new Set(rawData.jobs.flatMap(job => job.일반전형 ? job.일반전형.split(',').map(c => c.trim()) : [])).size) || 
+               (filters.agencies.length > 0 && filters.agencies.length < new Set(rawData.jobs.map(job => job.기관명)).size)}
+            <span class="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+              필터 적용됨
+            </span>
+          {/if}
+        </div>
+      </div>
+      <PassingScorePrediction {data} />
     </section>
   {/if}
 </div>

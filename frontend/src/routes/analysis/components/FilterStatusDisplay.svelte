@@ -297,33 +297,7 @@
     <!-- 메인 콘텐츠 (확장 시에만 표시) -->
     {#if isExpanded}
       <div class="p-4 space-y-4 max-h-96 overflow-y-auto">
-        <!-- 필터링 효과 요약 -->
-        <div class="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-          <div class="flex items-center justify-between mb-2">
-            <span class="text-sm font-medium text-blue-800">
-              {activeFiltersCount > 0 ? '필터링 효과' : '전체 데이터'}
-            </span>
-            <span class="text-lg font-bold text-blue-900">
-              {activeFiltersCount > 0 ? `${reductionPercentage.toFixed(1)}%` : '100%'}
-            </span>
-          </div>
-          <div class="w-full bg-blue-200 rounded-full h-2">
-            <div 
-              class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-              style="width: {activeFiltersCount > 0 ? reductionPercentage : 100}%"
-            ></div>
-          </div>
-          <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
-            <div class="text-blue-700">
-              <span class="font-medium">원본:</span> {totalOriginal}건
-            </div>
-            <div class="text-blue-700">
-              <span class="font-medium">결과:</span> {totalFiltered}건
-            </div>
-          </div>
-        </div>
-
-        <!-- 활성 필터 목록 -->
+        <!-- 필터 설정 (최상단 배치) -->
         <div class="space-y-3">
           <div class="flex items-center space-x-2">
             <Settings size={14} class="text-gray-600" />
@@ -655,20 +629,44 @@
           {/if}
         </div>
 
-        <!-- 하단 데이터 요약 -->
-        <div class="border-t border-gray-200 pt-3">
-          <div class="grid grid-cols-3 gap-3">
-            <div class="text-center p-2 bg-blue-50 rounded-lg">
-              <div class="text-lg font-bold text-blue-600">{filteredData.jobs.length}</div>
-              <div class="text-xs text-blue-700 font-medium">채용공고</div>
+        <!-- 전체 데이터 요약 -->
+        <div class="grid grid-cols-3 gap-3">
+          <div class="text-center p-2 bg-blue-50 rounded-lg">
+            <div class="text-lg font-bold text-blue-600">{filteredData.jobs.length}</div>
+            <div class="text-xs text-blue-700 font-medium">채용공고</div>
+          </div>
+          <div class="text-center p-2 bg-green-50 rounded-lg">
+            <div class="text-lg font-bold text-green-600">{filteredData.competition.length}</div>
+            <div class="text-xs text-green-700 font-medium">경쟁률</div>
+          </div>
+          <div class="text-center p-2 bg-purple-50 rounded-lg">
+            <div class="text-lg font-bold text-purple-600">{filteredData.hiring.length}</div>
+            <div class="text-xs text-purple-700 font-medium">채용인원</div>
+          </div>
+        </div>
+        
+        <!-- 필터링 효과 요약 -->
+        <div class="p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-blue-800">
+              {activeFiltersCount > 0 ? '필터링 효과' : '전체 데이터'}
+            </span>
+            <span class="text-lg font-bold text-blue-900">
+              {activeFiltersCount > 0 ? `${reductionPercentage.toFixed(1)}%` : '100%'}
+            </span>
+          </div>
+          <div class="w-full bg-blue-200 rounded-full h-2">
+            <div 
+              class="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
+              style="width: {activeFiltersCount > 0 ? reductionPercentage : 100}%"
+            ></div>
+          </div>
+          <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+            <div class="text-blue-700">
+              <span class="font-medium">원본:</span> {totalOriginal}건
             </div>
-            <div class="text-center p-2 bg-green-50 rounded-lg">
-              <div class="text-lg font-bold text-green-600">{filteredData.competition.length}</div>
-              <div class="text-xs text-green-700 font-medium">경쟁률</div>
-            </div>
-            <div class="text-center p-2 bg-purple-50 rounded-lg">
-              <div class="text-lg font-bold text-purple-600">{filteredData.hiring.length}</div>
-              <div class="text-xs text-purple-700 font-medium">채용인원</div>
+            <div class="text-blue-700">
+              <span class="font-medium">결과:</span> {totalFiltered}건
             </div>
           </div>
         </div>
