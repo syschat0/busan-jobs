@@ -85,7 +85,10 @@
             <BarChart3 size={18} />
             <span>분석</span>
           </a>
-
+          <a href="/datasheet" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/datasheet' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
+            <Grid3X3 size={18} />
+            <span>데이터시트</span>
+          </a>
           <a href="/aimatch" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/aimatch' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <Brain size={18} />
             <span>AI매칭</span>
