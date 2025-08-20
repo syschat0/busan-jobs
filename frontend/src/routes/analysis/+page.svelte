@@ -332,39 +332,40 @@
       <CompetitionChart {data} />
     </section>
 
-    <!-- 하단 차트 및 분석 -->
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- 트렌드 분석 -->
-      <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold text-gray-900">채용 트렌드</h2>
-          <div class="flex items-center space-x-2 text-sm text-gray-500">
-            <TrendingUp size={16} />
-            <span>연도별 추이</span>
-          </div>
+    <!-- 통합 트렌드 분석 패널 -->
+    <section class="bg-white rounded-2xl border border-gray-200 p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-900">채용 트렌드 분석</h2>
+        <div class="flex items-center space-x-2 text-sm text-gray-500">
+          <TrendingUp size={16} />
+          <span>연도별 및 월별 추이</span>
         </div>
-        <TrendChart {data} onYearSelect={handleYearSelect} getLatestYear={setDefaultYear} />
       </div>
-
-      <!-- 월별 트렌드 패널 -->
-      <div class="bg-white rounded-2xl border border-gray-200 p-6">
-        <div class="flex items-center justify-between mb-6">
-          <h2 class="text-xl font-bold text-gray-900">
-            {displayYear ? `${displayYear}년 ` : ''}월별 트렌드
-          </h2>
-          <Calendar size={20} class="text-gray-400" />
+      
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 연도별 트렌드 -->
+        <div class="border border-gray-200 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">연도별 채용 트렌드</h3>
+          <TrendChart {data} onYearSelect={handleYearSelect} getLatestYear={setDefaultYear} />
         </div>
-        {#if displayYear}
-          <MonthlyTrends {data} selectedYear={displayYear} />
-        {:else}
-          <!-- 로딩 상태 -->
-          <div class="flex items-center justify-center h-64">
-            <div class="text-center text-gray-500">
-              <Calendar size={32} class="mx-auto mb-2 text-gray-400" />
-              <div class="text-sm">데이터를 불러오는 중...</div>
+        
+        <!-- 월별 트렌드 -->
+        <div class="border border-gray-200 rounded-xl p-4">
+          <h3 class="text-sm font-semibold text-gray-700 mb-4">
+            {displayYear ? `${displayYear}년 ` : ''}월별 트렌드
+          </h3>
+          {#if displayYear}
+            <MonthlyTrends {data} selectedYear={displayYear} />
+          {:else}
+            <!-- 로딩 상태 -->
+            <div class="flex items-center justify-center h-64">
+              <div class="text-center text-gray-500">
+                <Calendar size={32} class="mx-auto mb-2 text-gray-400" />
+                <div class="text-sm">데이터를 불러오는 중...</div>
+              </div>
             </div>
-          </div>
-        {/if}
+          {/if}
+        </div>
       </div>
     </section>
 
@@ -389,7 +390,7 @@
     <!-- 합격선 예측 -->
     <section class="bg-white rounded-2xl border border-gray-200 p-6">
       <div class="flex items-center justify-between mb-6">
-        <h2 class="text-xl font-bold text-gray-900">합격선 예측 분석</h2>
+        <h2 class="text-xl font-bold text-gray-900">재미로 보는 합격선 예측 분석</h2>
         <div class="text-sm text-gray-500">
           과거 데이터 기반 2025년 예측
           {#if (filters.years.length > 0 && filters.years.length < new Set(rawData.jobs.map(job => job.공고시작일 ? new Date(job.공고시작일).getFullYear() : null).filter(y => y)).size) || 

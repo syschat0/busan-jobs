@@ -164,7 +164,7 @@
               <!-- 기관명 -->
               <td class="py-2 px-2">
                 <div class="flex items-center space-x-2">
-                  <div class="w-4 h-4 bg-blue-500 rounded text-white flex items-center justify-center flex-shrink-0">
+                  <div class="min-w-[1.5rem] h-6 px-1 bg-blue-500 rounded text-white flex items-center justify-center flex-shrink-0">
                     <span class="font-bold text-xs">{agency.name.slice(2, 4)}</span>
                   </div>
                   <span class="font-medium text-gray-900 text-xs truncate">{agency.name}</span>

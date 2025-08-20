@@ -57,6 +57,14 @@
             score: passingScore,
             competition: competitionRate
           });
+        } else {
+          // 같은 연도 데이터가 여러 개인 경우 평균값 사용
+          const existingScore = analysis[key].scores[existingIndex];
+          const existingCompetition = analysis[key].competitions[existingIndex];
+          analysis[key].scores[existingIndex] = (existingScore + passingScore) / 2;
+          analysis[key].competitions[existingIndex] = (existingCompetition + competitionRate) / 2;
+          analysis[key].dataPoints[existingIndex].score = (existingScore + passingScore) / 2;
+          analysis[key].dataPoints[existingIndex].competition = (existingCompetition + competitionRate) / 2;
         }
       }
     });
@@ -77,37 +85,41 @@
     const catData = categoryData[categoryName];
     if (!catData || catData.scores.length < 2) return null;
 
-    // 최근 3년 데이터만 사용
-    const recentData = catData.dataPoints.slice(-3);
+    // 전체 데이터 사용 (필터링된 범위 내에서)
+    const allData = catData.dataPoints;
+    const actualDataCount = allData.length;
     
     // 평균 계산
-    const avgScore = recentData.reduce((sum, d) => sum + d.score, 0) / recentData.length;
-    const avgCompetition = recentData.reduce((sum, d) => sum + d.competition, 0) / recentData.length;
+    const avgScore = allData.reduce((sum, d) => sum + d.score, 0) / allData.length;
+    const avgCompetition = allData.reduce((sum, d) => sum + d.competition, 0) / allData.length;
     
     // 표준편차 계산 (신뢰구간용)
-    const variance = recentData.reduce((sum, d) => sum + Math.pow(d.score - avgScore, 2), 0) / recentData.length;
+    const variance = allData.reduce((sum, d) => sum + Math.pow(d.score - avgScore, 2), 0) / allData.length;
     const stdDev = Math.sqrt(variance);
     
     // 추세 계산 (간단한 선형 회귀)
     let trend = 0;
-    if (recentData.length >= 2) {
-      const lastScore = recentData[recentData.length - 1].score;
-      const firstScore = recentData[0].score;
-      trend = (lastScore - firstScore) / recentData.length;
+    if (allData.length >= 2) {
+      const lastScore = allData[allData.length - 1].score;
+      const firstScore = allData[0].score;
+      trend = (lastScore - firstScore) / allData.length;
     }
     
     // 2025년 예측
     const prediction = avgScore + trend;
     
+    // 데이터 개수에 따른 신뢰구간 조정
+    const confidenceMultiplier = actualDataCount < 3 ? 2.5 : actualDataCount < 5 ? 2.0 : 1.5;
+    
     return {
       predicted: Math.max(0, Math.min(100, prediction)), // 0-100 범위 제한
-      lower: Math.max(0, prediction - stdDev),
-      upper: Math.min(100, prediction + stdDev),
+      lower: Math.max(0, prediction - (stdDev * confidenceMultiplier)),
+      upper: Math.min(100, prediction + (stdDev * confidenceMultiplier)),
       avgScore,
       avgCompetition,
       trend: trend > 0 ? '상승' : trend < 0 ? '하락' : '유지',
-      confidence: recentData.length >= 3 ? '높음' : '보통',
-      dataCount: recentData.length
+      confidence: actualDataCount >= 5 ? '보통' : actualDataCount >= 3 ? '낮음' : '매우 낮음',
+      dataCount: actualDataCount
     };
   }
 
@@ -241,8 +253,14 @@
             min: Math.min(...catData.scores.filter(s => s > 0)) - 10,
             max: Math.max(...catData.scores) + 10,
             ticks: {
+              stepSize: 1,  // 1점 단위로 표시
+              precision: 0,  // 소수점 없음
               callback: function(value) {
-                return value + '점';
+                // 정수일 때만 표시
+                if (Math.floor(value) === value) {
+                  return value + '점';
+                }
+                return '';
               }
             },
             title: {
@@ -517,12 +535,34 @@
               <div>
                 <span class="text-gray-600">신뢰도:</span>
                 <span class={`font-medium ml-1 ${
-                  pred.confidence === '높음' ? 'text-green-600' : 'text-amber-600'
+                  pred.dataCount >= 5 ? 'text-green-600' : 
+                  pred.dataCount >= 3 ? 'text-amber-600' : 
+                  'text-red-600'
                 }`}>
-                  {pred.confidence}
+                  {pred.dataCount >= 5 ? '보통' : pred.dataCount >= 3 ? '낮음' : '매우 낮음'}
+                  <span class="text-xs text-gray-500">({pred.dataCount}개년)</span>
                 </span>
               </div>
             </div>
+            
+            {#if pred.dataCount <= 5}
+              <div class="mt-3 p-2 {pred.dataCount === 5 ? 'bg-yellow-50 border-yellow-200' : 'bg-amber-50 border-amber-200'} border rounded text-xs">
+                <div class="flex items-start space-x-1">
+                  <AlertCircle size={14} class="{pred.dataCount === 5 ? 'text-yellow-600' : 'text-amber-600'} mt-0.5 flex-shrink-0" />
+                  <div class="{pred.dataCount === 5 ? 'text-yellow-800' : 'text-amber-800'}">
+                    <strong>통계적 한계:</strong> 
+                    {#if pred.dataCount === 5}
+                      5개년 데이터는 최소한의 통계적 요건을 충족하나, 여전히 표본 크기가 작습니다.
+                      회귀분석의 일반적 요구사항(n≥30)에는 미달하므로 예측값은 <strong>제한적 참고용</strong>으로 활용하세요.
+                    {:else}
+                      {pred.dataCount}개년 데이터로는 통계적 신뢰성이 낮습니다.
+                      예측값은 <strong>참고용</strong>으로만 활용하시고, 
+                      실제 합격선은 크게 달라질 수 있음을 유의하세요.
+                    {/if}
+                  </div>
+                </div>
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -607,7 +647,7 @@
               <div class="bg-white rounded-lg p-3">
                 <div class="font-semibold mb-1">과거 평균 합격선</div>
                 <div>
-                  최근 {pred.dataCount}개년 평균 <span class="font-bold text-blue-600">{pred.avgScore.toFixed(1)}점</span>으로,
+                  {pred.dataCount}개년 데이터 평균 <span class="font-bold text-blue-600">{pred.avgScore.toFixed(1)}점</span>으로,
                   평균 경쟁률은 <span class="font-bold">{pred.avgCompetition.toFixed(1)}:1</span>이었습니다.
                 </div>
               </div>
