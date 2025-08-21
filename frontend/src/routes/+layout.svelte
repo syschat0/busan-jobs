@@ -9,9 +9,12 @@
 
 
   import { userInfo } from "$lib/stores/userStore";
+  
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+  
   async function checkSession() {
     try {
-      const res = await fetch("http://localhost:8080/user/SessionInfo", {
+      const res = await fetch(`${BACKEND_URL}/user/SessionInfo`, {
         method: "GET",
         credentials: "include"
       });
@@ -30,7 +33,7 @@
 
   async function logout() {
     try {
-      await fetch("http://localhost:8080/user/Logout", {
+      await fetch(`${BACKEND_URL}/user/Logout`, {
         method: "POST",
         credentials: "include"
       });

@@ -1,6 +1,7 @@
 <script>
     import { goto } from '$app/navigation';
-
+    
+	const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
     let email = "";
     let name = "";
     let password = "";
@@ -24,7 +25,7 @@
         }
 
         try {
-            const response = await fetch("http://localhost:8080/user/Register", {
+            const response = await fetch(`${BACKEND_URL}/user/Register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
