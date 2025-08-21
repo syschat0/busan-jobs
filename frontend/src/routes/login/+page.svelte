@@ -33,7 +33,7 @@
             console.log("서버 응답:", result);
 
             if (result.RESULT === "OK") {
-                alert("로그인이 완료되었습니다!");
+                //alert("로그인이 완료되었습니다!");
                 userInfo.set({ name: result.name, email: result.email });
                 goto("/");
             } else {
@@ -139,7 +139,8 @@
 
         <div class="input-group">
             <label for="password">비밀번호</label>
-            <input id="password" type="password" bind:value={password} placeholder="비밀번호를 입력하세요" />
+            <input id="password" type="password" bind:value={password} placeholder="비밀번호를 입력하세요" 
+                on:keydown={(e) => e.key === 'Enter' && handleLogin()}/>
         </div>
 
         {#if errorMessage}

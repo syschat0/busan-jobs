@@ -1,10 +1,17 @@
 <script>
+  import { createEventDispatcher } from 'svelte';
   import { Calendar, MapPin, Users, TrendingUp, ExternalLink, Heart } from 'lucide-svelte';
   import { format } from 'date-fns';
   import { ko } from 'date-fns/locale';
   import competitionData from '$lib/data/competition.json';
   
   export let job;
+  
+  const dispatch = createEventDispatcher();
+  
+  function handleDetailClick() {
+    dispatch('showDetail', { job });
+  }
   
   // 상태에 따른 배지 스타일 결정
   function getStatusBadge(status) {
@@ -181,7 +188,10 @@
         <span>지원하기</span>
       </button>
       
-      <button class="btn-secondary px-4 py-3 sm:w-auto">
+      <button 
+        class="btn-secondary px-4 py-3 sm:w-auto"
+        on:click={handleDetailClick}
+      >
         <span class="text-sm">상세보기</span>
       </button>
     </div>
