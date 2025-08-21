@@ -1,7 +1,7 @@
 <script>
   import '../app.css';
   import { page } from '$app/stores';
-  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain, Palette} from 'lucide-svelte';
+  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain, Palette, Home} from 'lucide-svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
   import UserRadarChartModal from '$lib/components/UserRadarChartModal.svelte';
   import { config } from '$lib/utils/config.js';
@@ -158,7 +158,7 @@
         <!-- Navigation -->
         <nav class="hidden md:flex items-center space-x-1">
           <a href="/" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
-            <Search size={18} />
+            <Home size={18} />
             <span>홈</span>
           </a>
           <a href="/search" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/search' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">

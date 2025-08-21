@@ -197,10 +197,10 @@
           {@const isCurrentMonth = isSameMonth(date, currentDate)}
           
           <button
-            class="relative h-24 p-1 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors
+            class="relative h-24 p-1 border rounded-lg hover:bg-gray-50 transition-colors
                    text-left {!isCurrentMonth ? 'opacity-50' : ''}
                    {isSelected ? 'bg-primary-100 border-primary-400 ring-2 ring-primary-300' : 
-                    showHistorical && getHistoricalJobsForDate($jobs, date).length > 0 ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200' : ''}"
+                    showHistorical && getHistoricalJobsForDate($jobs, date).length > 0 ? 'bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 shadow-sm' : 'border-gray-100'}"
             on:click={() => selectDate(date)}
           >
             <!-- 날짜 -->
@@ -256,7 +256,7 @@
           </div>
           {#if showHistorical}
             <div class="flex items-center space-x-2 mt-2 pt-2 border-t border-gray-200">
-              <div class="w-4 h-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded"></div>
+              <div class="w-4 h-4 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-400 rounded shadow-sm"></div>
               <span class="text-xs">과거 동일날짜 이벤트</span>
             </div>
           {/if}
