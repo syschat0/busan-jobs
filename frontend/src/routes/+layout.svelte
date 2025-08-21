@@ -13,9 +13,12 @@
   // 레이더 차트 모달 상태
   let showRadarChart = false;
   let radarChartData = null;
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080'
+
   async function checkSession() {
     try {
-      const res = await fetch("http://localhost:8080/user/SessionInfo", {
+      const res = await fetch(`${BACKEND_URL}/user/SessionInfo`, {
         method: "GET",
         credentials: "include"
       });
@@ -34,7 +37,7 @@
 
   async function logout() {
     try {
-      await fetch("http://localhost:8080/user/Logout", {
+      await fetch(`${BACKEND_URL}/user/Logout`, {
         method: "POST",
         credentials: "include"
       });
@@ -170,7 +173,10 @@
             <BarChart3 size={18} />
             <span>분석</span>
           </a>
-
+          <a href="/datasheet" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/datasheet' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
+            <Grid3X3 size={18} />
+            <span>데이터시트</span>
+          </a>
           <a href="/aimatch" class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/aimatch' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}">
             <Brain size={18} />
             <span>AI매칭</span>

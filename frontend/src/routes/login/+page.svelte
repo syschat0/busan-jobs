@@ -1,7 +1,8 @@
 <script>
     import { goto } from '$app/navigation';
     import { userInfo } from '$lib/stores/userStore.ts';
-
+	const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
+	
     let email = "";
     let password = "";
     let errorMessage = "";
@@ -15,7 +16,7 @@
         }
 
         try {
-            const response = await fetch("http://localhost:8080/user/Login", {
+            const response = await fetch(`${BACKEND_URL}/user/Login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
