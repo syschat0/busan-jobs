@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { Search, Filter, SlidersHorizontal, X, MapPin, Calendar, Users, Grid, List } from 'lucide-svelte';
   import JobCard from '$lib/components/JobCard.svelte';
+  import JobDetailModal from '$lib/components/JobDetailModal.svelte';
   import { config } from '$lib/utils/config.js';
   
   // Stores import
@@ -10,6 +11,20 @@
   
   // UI 상태
   let showFilters = false;
+  
+  // 모달 상태
+  let showDetailModal = false;
+  let selectedJob = null;
+  
+  function handleShowDetail(event) {
+    selectedJob = event.detail.job;
+    showDetailModal = true;
+  }
+  
+  function closeDetailModal() {
+    showDetailModal = false;
+    selectedJob = null;
+  }
   
   // 필터 상태를 로컬에서 관리하고 store와 동기화
   let searchQuery = '';
@@ -276,7 +291,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
           {#each $filteredJobs as job (job.id)}
             <div class="animate-fade-in">
-              <JobCard {job} />
+              <JobCard {job} on:showDetail={handleShowDetail} />
             </div>
           {/each}
         </div>
@@ -329,3 +344,12 @@
     {/if}
   </section>
 </div>
+
+<!-- Job Detail Modal -->
+{#if showDetailModal && selectedJob}
+  <JobDetailModal 
+    isOpen={showDetailModal} 
+    job={selectedJob} 
+    on:close={closeDetailModal} 
+  />
+{/if}

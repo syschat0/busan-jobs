@@ -1,17 +1,21 @@
 <script>
   import '../app.css';
   import { page } from '$app/stores';
-  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain} from 'lucide-svelte';
+  import { Building2, Calendar, BarChart3, Settings, Search, Heart, Grid3X3, PieChart, LogIn, LogOut, Airplay, AirVentIcon, Brain, Palette} from 'lucide-svelte';
   import Toast from '$lib/components/ui/Toast.svelte';
+  import UserRadarChartModal from '$lib/components/UserRadarChartModal.svelte';
   import { config } from '$lib/utils/config.js';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
 
-
   import { userInfo } from "$lib/stores/userStore";
   
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
-  
+  // 레이더 차트 모달 상태
+  let showRadarChart = false;
+  let radarChartData = null;
+
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080'
+
   async function checkSession() {
     try {
       const res = await fetch(`${BACKEND_URL}/user/SessionInfo`, {
@@ -44,6 +48,87 @@
     }
   }
 
+  async function openUserRadarChart() {
+    try {
+      if (!$userInfo || !$userInfo.email) {
+        console.error("사용자 이메일 정보가 없습니다.");
+        return;
+      }
+      
+      const encodedEmail = encodeURIComponent($userInfo.email);
+      const response = await fetch(`http://localhost:8080/api/result?email=${encodedEmail}`, {
+        method: "GET",
+        credentials: "include"
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log("레이더 차트 데이터:", result);
+        
+        // STATS name을 key로 맵핑하는 객체
+        const nameToKeyMap = {
+          '성실성': 'conscientiousness',
+          '개방성': 'openness',
+          '외향성': 'extraversion',
+          '우호성': 'agreeableness',
+          '정서안정성': 'emotional_stability',
+          '기술전문성': 'technical_mastery',
+          '인지문제해결': 'cognitive_problem_solving',
+          '대인영향력': 'interpersonal_influence',
+          '자기관리': 'self_management',
+          '적응력': 'adaptability',
+          '학습속도': 'learning_speed',
+          '대인민첩성': 'people_agility',
+          '성과민첩성': 'result_agility',
+          '자기인식': 'self_awareness',
+          '자기조절': 'self_regulation',
+          '공감사회기술': 'empathy_social'
+        };
+        
+        // result.data를 key 기반 객체로 변환
+        const convertedUserWeights = {};
+        if (result.data && Array.isArray(result.data)) {
+          result.data.forEach(item => {
+            if (item.name && item.value !== undefined) {
+              const key = nameToKeyMap[item.name];
+              if (key) {
+                convertedUserWeights[key] = item.value;
+              }
+            }
+          });
+        } else if (result.data && typeof result.data === 'object') {
+          // result.data가 객체인 경우
+          Object.entries(result.data).forEach(([name, value]) => {
+            const key = nameToKeyMap[name];
+            if (key) {
+              convertedUserWeights[key] = value;
+            }
+          });
+        }
+        
+        // 데이터를 UserRadarChart 컴포넌트에 맞는 형태로 변환
+        radarChartData = {
+          jobWeights: result.jobWeights || {},
+          userWeights: convertedUserWeights,
+          rawData: result // 원본 데이터도 함께 저장
+        };
+        
+        console.log("변환된 사용자 가중치:", convertedUserWeights);
+        
+        // 모달 열기
+        showRadarChart = true;
+      } else {
+        console.error("레이더 차트 데이터 가져오기 실패:", response.status);
+      }
+    } catch (e) {
+      console.error("레이더 차트 오류:", e);
+    }
+  }
+
+  function closeRadarChart() {
+    showRadarChart = false;
+    radarChartData = null;
+  }
   onMount(() => {
     checkSession();
   });
@@ -101,6 +186,13 @@
         <!-- User actions -->
         <div class="flex items-center space-x-2">
           {#if $userInfo}
+            <button 
+              class="p-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+              on:click={openUserRadarChart}
+              title="내 레이더 차트 보기"
+            >
+              <Palette size={20} class="text-gray-600 hover:text-blue-600" />
+            </button>
             <span class="text-gray-700 font-medium">{$userInfo.name} 님 안녕하세요 👋</span>
             <button
                     class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
@@ -177,4 +269,12 @@
 
   <!-- Toast Notifications -->
   <Toast />
+  
+  <!-- User Radar Chart Modal -->
+  <UserRadarChartModal 
+    isOpen={showRadarChart} 
+    radarData={radarChartData}
+    showJobMatching={false}
+    on:close={closeRadarChart} 
+  />
 </div>
