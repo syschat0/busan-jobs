@@ -195,7 +195,7 @@
             </button>
             <span class="text-gray-700 font-medium">{$userInfo.name} 님 안녕하세요 👋</span>
             <button
-                    class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    class="flex items-center space-x-2 px-2 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
                     on:click={logout}
             >
               <LogOut size={20} />
