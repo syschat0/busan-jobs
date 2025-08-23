@@ -56,7 +56,7 @@
       }
       
       const encodedEmail = encodeURIComponent($userInfo.email);
-      const response = await fetch(`http://localhost:8080/api/result?email=${encodedEmail}`, {
+      const response = await fetch(`${BACKEND_URL}/api/result?email=${encodedEmail}`, {
         method: "GET",
         credentials: "include"
       });
@@ -203,7 +203,7 @@
             </button>
           {:else}
             <a href="/login"
-               class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors {$page.url.pathname === '/login' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
+               class="flex items-center space-x-2 px-2 py-2 rounded-lg transition-colors {$page.url.pathname === '/login' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}"
             >
               <LogIn size={20} />
               <span>로그인</span>

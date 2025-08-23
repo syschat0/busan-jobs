@@ -1,13 +1,84 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import {onMount, tick} from 'svelte';
     import { get } from 'svelte/store';
     import { fly, scale, fade, slide } from 'svelte/transition';
     import { quintOut, backOut, elasticOut, cubicOut } from 'svelte/easing';
+
+    import { recommendedJobs } from '../../lib/stores/jobs.js';
     import { userInfo } from '../../lib/stores/userStore';
 
     const TOTAL = 20;
     const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
-	
+
+
+    import { Chart, registerables } from 'chart.js';
+    import {format} from "date-fns";
+    import {ko} from "date-fns/locale";
+    import {Calendar, Users} from "lucide-svelte";
+
+    Chart.register(...registerables);
+    // 추천 채용 정보
+    //let recommendJobOpening = { }
+    let recommendJobOpening: any[] = [];
+
+
+    let chartCanvas: HTMLCanvasElement;
+    let chartInstance: Chart | null = null;
+
+
+    async function renderRadarChart() {
+        await tick(); // DOM이 완전히 렌더링된 후 실행
+
+        if (!result || !chartCanvas) return;
+
+
+        const labels = Object.keys(result);
+        const values = Object.values(result).filter(v => typeof v === 'number') as number[];
+
+        if (chartInstance) chartInstance.destroy();
+
+        chartInstance = new Chart(chartCanvas, {
+            type: 'radar',
+            data: {
+                labels,
+                datasets: [
+                    {
+                        label: 'AI 평가 결과',
+                        data: values,
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    r: {
+                        beginAtZero: true,
+                        min :0,
+                        max :5,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    },
+                    title: {
+                        display: true,
+                        text: '스무고개 능력치 분석'
+                    }
+                }
+            }
+        });
+    }
+
+
+
+
     let userEmail: string | null = null;
     let index = 0;
 
@@ -16,15 +87,16 @@
     let total = TOTAL;
     let isLoading = false;
     let result: any = null;
-    let toastMsg = '';
+    let toastMsg = '';1
+
     let sessionLabel = '-';
-    
+
     // 카드 관련 상태
     let currentCard: {id: number, question?: string, flipped?: boolean, isFlipping?: boolean, colorIndex?: number} | null = null;
     let completedCards: Array<{id: number, question: string, answer: string}> = [];
     let isAnimating = false;
     let remainingCards = TOTAL;
-    
+
     // 뒤에 쌓인 카드들의 각도 미리 계산
     const stackedCardAngles = Array.from({ length: 5 }, (_, i) => ({
         rotate: (i % 2 === 0 ? -1 : 1) * (2 + i * 0.8),
@@ -59,12 +131,12 @@
     async function drawCard() {
         console.log('drawCard 호출됨', { isAnimating, isLoading, remainingCards });
         if (isAnimating || isLoading || remainingCards <= 0) return;
-        
+
         isAnimating = true;
-        
+
         const cardNumber = TOTAL - remainingCards + 1;
         const colorIdx = (cardNumber - 1) % 4;  // 0, 1, 2, 3 순환
-        
+
         // 새 카드 생성 (뒤집는 중 상태 추가)
         currentCard = {
             id: cardNumber,
@@ -73,10 +145,10 @@
             colorIndex: colorIdx  // 색상 인덱스 추가
         };
         console.log('새 카드 생성:', currentCard, '색상 인덱스:', colorIdx);
-        
+
         // 질문 로드
         await loadQuestionForCard();
-        
+
         // 카드 뒤집기 완료
         setTimeout(() => {
             if (currentCard) {
@@ -94,12 +166,41 @@
             // 첫 번째 카드인 경우 빈 문자열, 아니면 이전 답변 없이 빈 문자열
             const data = await postAnswer('');
             applyIndex(data);
+
+
+            //여기 수정해야됨 .
+
+            if (data?.done) {
+                question = '평가가 완료되었습니다 🎉';
+                result = data.scores;
+                console.log(result);
+                index = TOTAL;
+                total = TOTAL;
+                isAnimating = false;
+                renderRadarChart();
+
+
+                console.log("===== 추천채용정보 ====");
+                console.log(data.recommendJobOpening);
+                console.log(result);
+
+                recommendJobOpening = data.recommendJobOpening;
+                return;
+            }
+
+
             if (data?.question) {
                 if (currentCard) {
                     currentCard.question = data.question;
                     question = data.question;
                 }
-                index = data.index ?? (TOTAL - remainingCards + 1);
+
+                //alert(data.index);
+                //index = data.index ?? (TOTAL - remainingCards + 1);
+                index = TOTAL-data.index;
+                remainingCards = index;
+
+
             } else {
                 if (currentCard) {
                     currentCard.question = '질문을 가져오지 못했습니다.';
@@ -130,25 +231,25 @@
     async function sendAnswer() {
         const val = answer.trim();
         if (!val || !currentCard) return;
-        
+
         isAnimating = true;
-        
+
         // 현재 카드를 완료 목록에 추가
         completedCards = [...completedCards, {
             id: currentCard.id,
             question: currentCard.question || '',
             answer: val
         }];
-        
+
         // 카드를 뒤로 보내는 애니메이션 (즉시 시작)
         currentCard = null;
         remainingCards--;
         answer = '';
-        
+
         try {
             // 서버에 답변 전송
             const data = await postAnswer(val);
-            
+
             if (data?.done) {
                 question = '평가가 완료되었습니다 🎉';
                 result = data.scores;
@@ -156,11 +257,19 @@
                 index = TOTAL;
                 total = TOTAL;
                 isAnimating = false;
+                renderRadarChart();
+
+
+                console.log("===== 추천채용정보 ====");
+                console.log(data.recommendJobOpening);
+                console.log(result);
+
+                recommendJobOpening = data.recommendJobOpening;
                 return;
             }
-            
+
             applyIndex(data);
-            
+
             // 다음 카드가 있으면 자동으로 뽑기
             if (remainingCards > 0) {
                 // 딜레이 없이 바로 다음 카드 뽑기
@@ -186,8 +295,22 @@
         sessionLabel = userEmail;
         console.log('페이지 로드 완료, 사용자:', userEmail);
         // 자동으로 첫 카드를 뽑지 않고, 사용자가 버튼을 클릭하도록 변경
-        // initFirstCard();
+         initFirstCard();
     });
+
+
+    let loadingText = "분석중.";
+    let dots = 1;
+
+    onMount(() => {
+        const interval = setInterval(() => {
+            dots = (dots % 3) + 1; // 1,2,3 반복
+            loadingText = "분석중" + ".".repeat(dots);
+        }, 500);
+
+        return () => clearInterval(interval);
+    });
+
 </script>
 
 <!-- 스타일 추가 -->
@@ -200,7 +323,7 @@
         align-items: center;
         justify-content: center;
     }
-    
+
     .deck-behind {
         position: absolute;
         width: 280px;
@@ -211,7 +334,7 @@
         pointer-events: none;
         z-index: 1;
     }
-    
+
     .stacked-card {
         position: absolute;
         width: 100%;
@@ -221,24 +344,24 @@
         border: 2px solid rgba(255, 255, 255, 0.1);
         transform-origin: center bottom;
     }
-    
+
     /* 파스텔 톤 카드덱 색상 */
     .stacked-card-0 {
         background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); /* blue-50 계열 */
     }
-    
+
     .stacked-card-1 {
         background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); /* orange-50 계열 */
     }
-    
+
     .stacked-card-2 {
         background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%); /* green-50 계열 */
     }
-    
+
     .stacked-card-3 {
         background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); /* purple-50 계열 */
     }
-    
+
     .current-card {
         position: relative;
         width: 280px;
@@ -247,15 +370,15 @@
         transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 10;
     }
-    
+
     .current-card.flipped {
         transform: rotateY(180deg);
     }
-    
+
     .current-card.flipping {
         animation: continuousFlip 1s linear infinite;
     }
-    
+
     @keyframes continuousFlip {
         from {
             transform: rotateY(0deg);
@@ -264,7 +387,7 @@
             transform: rotateY(360deg);
         }
     }
-    
+
     .card-face {
         position: absolute;
         width: 100%;
@@ -276,75 +399,75 @@
         justify-content: center;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     }
-    
+
     .card-front {
         color: #374151;  /* 파스텔 배경에 맞는 어두운 텍스트 색상 */
         border: 2px solid rgba(255, 255, 255, 0.5);
     }
-    
+
     /* 카드 앞면 파스텔 색상들 - 카드덱과 동일 */
     .card-color-0 {
         background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); /* blue-50 계열 */
     }
-    
+
     .card-color-1 {
         background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); /* orange-50 계열 */
     }
-    
+
     .card-color-2 {
         background: linear-gradient(135deg, #bbf7d0 0%, #86efac 100%); /* green-50 계열 */
     }
-    
+
     .card-color-3 {
         background: linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 100%); /* purple-50 계열 */
     }
-    
+
     .card-back {
         background: white;
         transform: rotateY(180deg);
         padding: 24px;
         flex-direction: column;
     }
-    
+
     /* 카드 뒷면 테두리 색상들 - 파스텔 톤과 매칭 */
     .card-back-border-0 {
         border: 3px solid #93c5fd;  /* blue-300 */
         box-shadow: 0 10px 40px rgba(147, 197, 253, 0.25);
     }
-    
+
     .card-back-border-1 {
         border: 3px solid #fdba74;  /* orange-300 */
         box-shadow: 0 10px 40px rgba(253, 186, 116, 0.25);
     }
-    
+
     .card-back-border-2 {
         border: 3px solid #86efac;  /* green-300 */
         box-shadow: 0 10px 40px rgba(134, 239, 172, 0.25);
     }
-    
+
     .card-back-border-3 {
         border: 3px solid #d8b4fe;  /* purple-300 */
         box-shadow: 0 10px 40px rgba(216, 180, 254, 0.25);
     }
-    
+
     /* Q번호 배지 색상들 - 진한 색상으로 가독성 확보 */
     .q-badge-0 {
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);  /* blue-500 */
     }
-    
+
     .q-badge-1 {
         background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);  /* orange-500 */
     }
-    
+
     .q-badge-2 {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);  /* green-500 */
     }
-    
+
     .q-badge-3 {
         background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);  /* purple-500 */
     }
-    
-    
+
+
     .completed-card {
         background: white;
         border: 1px solid #e5e7eb;
@@ -352,12 +475,12 @@
         padding: 12px;
         transition: all 0.3s ease;
     }
-    
+
     .completed-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
-    
+
     .deck-indicator {
         display: inline-block;
         width: 6px;
@@ -367,7 +490,7 @@
         margin: 0 2px;
         opacity: 0.6;
     }
-    
+
     .deck-indicator.active {
         background: #7c3aed;
         opacity: 1;
@@ -385,7 +508,7 @@
                 </svg>
                 AI 직무 매칭
             </div>
-            
+
             <h1 class="text-3xl font-bold text-gray-900 mb-2">
                 스무고개 직무 적합도 테스트
             </h1>
@@ -393,7 +516,7 @@
                 카드를 뽑아 AI가 생성하는 20개 질문에 답변해보세요
             </p>
         </div>
-        
+
         <!-- 세션 정보 -->
         <div class="text-sm text-gray-500">
             <div class="px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg">
@@ -404,6 +527,7 @@
 
     <!-- 메인 게임 영역 -->
     <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 rounded-2xl border border-gray-200 p-8">
+        {#if !result}
         <!-- 프로그레스 영역 -->
         <div class="mb-8">
             <div class="bg-white rounded-xl p-4 shadow-sm">
@@ -419,7 +543,7 @@
                         <div class="text-sm font-medium text-gray-600 mb-2">남은 카드</div>
                         <div class="flex items-center justify-end space-x-1">
                             {#each Array(TOTAL) as _, i}
-                                <span class="deck-indicator" 
+                                <span class="deck-indicator"
                                       class:active={i < remainingCards}></span>
                             {/each}
                         </div>
@@ -435,7 +559,7 @@
             </div>
         </div>
 
-        {#if !result}
+
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- 카드 스테이지 영역 -->
                 <div class="card-stage">
@@ -443,23 +567,23 @@
                     <div class="deck-behind">
                         {#if remainingCards > 0}
                             {#each Array(Math.min(remainingCards - (currentCard ? 1 : 0), 5)) as _, i}
-                                <div class="stacked-card stacked-card-{i % 4}" 
-                                     style="transform: 
-                                            translateZ(-{(i + 1) * 20}px) 
+                                <div class="stacked-card stacked-card-{i % 4}"
+                                     style="transform:
+                                            translateZ(-{(i + 1) * 20}px)
                                             translateY({(i + 1) * 3}px)
                                             translateX({stackedCardAngles[i].translateX}px)
                                             rotate({stackedCardAngles[i].rotate}deg)
-                                            rotateY({stackedCardAngles[i].rotateY}deg); 
-                                            opacity: {1 - (i + 1) * 0.12}; 
+                                            rotateY({stackedCardAngles[i].rotateY}deg);
+                                            opacity: {1 - (i + 1) * 0.12};
                                             z-index: {5 - i}">
                                 </div>
                             {/each}
                         {/if}
                     </div>
-                    
+
                     <!-- 현재 카드 (앞에 표시) -->
                     {#if currentCard}
-                        <div class="current-card" 
+                        <div class="current-card"
                              class:flipped={currentCard.flipped}
                              class:flipping={currentCard.isFlipping}>
                             <!-- 카드 앞면 -->
@@ -485,9 +609,9 @@
                         </div>
                     {:else if remainingCards > 0}
                         <!-- 카드 뽑기 버튼 (초기 상태) -->
-                        <button 
-                            class="relative w-72 h-96 bg-gradient-to-br from-purple-500/20 to-pink-500/20 
-                                   border-2 border-dashed border-purple-400 rounded-2xl 
+                        <button
+                            class="relative w-72 h-96 bg-gradient-to-br from-purple-500/20 to-pink-500/20
+                                   border-2 border-dashed border-purple-400 rounded-2xl
                                    hover:border-purple-600 hover:bg-gradient-to-br hover:from-purple-500/30 hover:to-pink-500/30
                                    transition-all duration-300 cursor-pointer z-20"
                             on:click={() => {
@@ -512,15 +636,15 @@
                 <!-- 답변 입력 영역 -->
                 <div class="flex flex-col justify-center">
                     {#if currentCard?.flipped}
-                        <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-200" 
+                        <div class="bg-white rounded-xl p-6 shadow-lg border-2 border-purple-200"
                              in:fly={{ x: 50, duration: 400, easing: quintOut }}>
                             <h3 class="text-lg font-semibold text-gray-900 mb-4">답변을 입력하세요</h3>
-                            
+
                             <div class="space-y-4">
                                 <div class="relative">
                                     <textarea
-                                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-white text-gray-900 
-                                               placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 
+                                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 bg-white text-gray-900
+                                               placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20
                                                outline-none transition-all duration-200 resize-none"
                                         rows="4"
                                         placeholder="여기에 답변을 입력하세요..."
@@ -539,11 +663,11 @@
                                     <p class="text-sm text-gray-500">
                                         Ctrl + Enter로 제출
                                     </p>
-                                    
+
                                     <button
                                         on:click={sendAnswer}
                                         disabled={isLoading || !answer.trim() || isAnimating}
-                                        class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 
+                                        class="inline-flex items-center px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500
                                                hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500
                                                text-white rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
                                     >
@@ -569,9 +693,9 @@
                             <p class="text-gray-600">잠시만 기다려주세요</p>
                         </div>
                     {:else if remainingCards > 0}
-                        <button 
-                            class="bg-white/60 backdrop-blur rounded-xl p-8 text-center hover:bg-white/80 
-                                   transition-all duration-300 cursor-pointer border-2 border-transparent 
+                        <button
+                            class="bg-white/60 backdrop-blur rounded-xl p-8 text-center hover:bg-white/80
+                                   transition-all duration-300 cursor-pointer border-2 border-transparent
                                    hover:border-purple-300 hover:shadow-lg transform hover:scale-105"
                             on:click={() => {
                                 console.log('오른쪽 영역 클릭으로 카드 뽑기');
@@ -589,21 +713,31 @@
                             <p class="text-sm text-purple-600 mt-2">남은 카드: {remainingCards}장</p>
                         </button>
                     {:else}
-                        <div class="bg-green-50 rounded-xl p-8 text-center">
-                            <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
-                                <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                        <!-- 결과 대기 화면 (팝업 오버레이) -->
+                        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                            <div class="bg-white rounded-2xl shadow-xl p-10 flex flex-col items-center">
+                                <!-- 로딩 아이콘 -->
+                                <div class="w-16 h-16 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mb-6"></div>
+
+                                <!-- 동적으로 점이 늘어나는 텍스트 -->
+                                <p class="text-xl font-semibold text-gray-800 animate-pulse text-center">
+                                    {loadingText}
+                                </p>
+                                <p class="text-sm text-gray-500 mt-2 text-center">
+                                    AI가 결과를 분석하는 중입니다
+                                </p>
                             </div>
-                            <h3 class="text-xl font-semibold text-gray-900 mb-2">모든 카드 완료!</h3>
-                            <p class="text-gray-600">20개의 질문에 모두 답변하셨습니다</p>
                         </div>
                     {/if}
+
+
+
                 </div>
             </div>
 
-            <!-- 완료된 질문 히스토리 -->
+
             {#if completedCards.length > 0}
+                <!-- 완료된 질문 히스토리
                 <div class="mt-8">
                     <h3 class="text-sm font-semibold text-gray-700 mb-3">완료한 질문들</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -622,6 +756,7 @@
                         {/each}
                     </div>
                 </div>
+                -->
             {/if}
         {:else}
             <!-- 결과 화면 -->
@@ -645,8 +780,15 @@
                         </svg>
                         상세 분석 결과
                     </h3>
+                    <!--
                     <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm text-gray-700 overflow-auto max-h-96 border border-gray-200">
                         <pre class="whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                    -->
+
+                    <!-- Radar Chart -->
+                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                        <canvas bind:this={chartCanvas} width="400" height="400"></canvas>
                     </div>
                 </div>
 
@@ -654,18 +796,63 @@
                 <div class="mt-6 flex justify-center space-x-3">
                     <button
                         on:click={() => window.location.reload()}
-                        class="px-6 py-2.5 bg-white border border-gray-300 rounded-lg font-medium 
+                        class="px-6 py-2.5 bg-white border border-gray-300 rounded-lg font-medium
                                text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                     >
-                        다시 테스트
+                        다시 테스트 해보기
                     </button>
-                    <button
-                        class="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 
-                               text-white rounded-lg font-medium transition-colors duration-200"
-                    >
-                        결과 저장
-                    </button>
+
                 </div>
+
+                <!-- AI추천채용정보 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {#each recommendJobOpening.slice(0, 3) as job}
+                        <div class="card p-6 hover:shadow-lg transition-all duration-300 group cursor-pointer animate-fade-in">
+                            <!-- 기관명 -->
+                            <div class="flex items-center space-x-2 mb-3">
+                                <div class="w-2 h-2 bg-primary-500 rounded-full"></div>
+                                <span class="text-sm font-medium text-primary-600">{job.agencyName}</span>
+                            </div>
+
+                            <!-- 공고명 -->
+                            <h3 class="text-lg font-bold text-gray-900 mb-4 group-hover:text-primary-700 transition-colors leading-tight">
+                                {job.jobTitle}
+                            </h3>
+
+                            <!-- 접수기간 -->
+                            <div class="flex items-center space-x-2 mb-3 text-sm text-gray-600">
+                                <Calendar size={16} class="text-gray-400" />
+                                <span>접수기간</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900 mb-4">
+                                {#if job.applicationStart && job.applicationEnd}
+                                    {format(new Date(job.applicationStart), 'M.dd', { locale: ko })} ~
+                                    {format(new Date(job.applicationEnd), 'M.dd', { locale: ko })}
+                                {:else}
+                                    <span>기간 정보 없음</span>
+                                {/if}
+
+                            </div>
+
+                            <!-- 모집직렬 -->
+                            <div class="flex items-center space-x-2 mb-4 text-sm text-gray-600">
+                                <Users size={16} class="text-gray-400" />
+                                <span>모집직렬</span>
+                            </div>
+                            <div class="text-sm font-medium text-gray-900 mb-4">
+                                {job.jobSeries || '일반직'}
+                            </div>
+
+                            <!-- 지원하기 버튼 -->
+                            <button class="w-full btn-primary text-sm py-2 mt-auto">
+                                지원하기
+                            </button>
+                        </div>
+                    {/each}
+                </div>
+
+
+
             </div>
         {/if}
     </div>

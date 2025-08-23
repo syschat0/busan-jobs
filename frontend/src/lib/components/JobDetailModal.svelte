@@ -9,6 +9,7 @@
   export let isOpen = false;
   export let job = null;
 
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8080';
   const dispatch = createEventDispatcher();
   
   let userWeights = {};
@@ -66,7 +67,7 @@
       radarChartError = null;
 
       const encodedEmail = encodeURIComponent($userInfo.email);
-      const response = await fetch(`http://localhost:8080/api/result?email=${encodedEmail}`, {
+      const response = await fetch(`${BACKEND_URL}/api/result?email=${encodedEmail}`, {
         method: "GET",
         credentials: "include"
       });
@@ -138,7 +139,7 @@
     }
 
     try {
-      const response = await fetch(`http://localhost:8080/api/job-posting-scores/${job.id}`, {
+      const response = await fetch(`${BACKEND_URL}/api/job-posting-scores/${job.id}`, {
         method: "GET",
         credentials: "include"
       });
