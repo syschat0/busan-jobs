@@ -25,6 +25,7 @@
     let chartCanvas: HTMLCanvasElement;
     let chartInstance: Chart | null = null;
 
+    let answerTextArea: HTMLTextAreaElement;
 
     async function renderRadarChart() {
         await tick(); // DOM이 완전히 렌더링된 후 실행
@@ -127,6 +128,20 @@
         }
     }
 
+    // 카드가 뒤집어졌을 때 자동으로 textarea에 포커스
+    $: if (currentCard?.flipped && answerTextArea) {
+        focusTextarea();
+    }
+    
+    async function focusTextarea() {
+        await tick(); // DOM 업데이트 완료 대기
+        if (answerTextArea && currentCard?.flipped) {
+            answerTextArea.focus();
+            // 커서를 텍스트 끝으로 이동 (선택사항)
+            answerTextArea.setSelectionRange(answerTextArea.value.length, answerTextArea.value.length);
+        }
+    }
+
     // 카드 뽑기 (맨 위 카드를 앞으로)
     async function drawCard() {
         console.log('drawCard 호출됨', { isAnimating, isLoading, remainingCards });
@@ -150,11 +165,17 @@
         await loadQuestionForCard();
 
         // 카드 뒤집기 완료
-        setTimeout(() => {
+        setTimeout(async () => {
             if (currentCard) {
                 currentCard.isFlipping = false;
                 currentCard.flipped = true;
                 console.log('카드 뒤집기 완료');
+
+                // DOM 업데이트 후 포커스
+                await tick();
+                if (answerTextArea) {
+                    answerTextArea.focus();
+                }
             }
             isAnimating = false;
         }, 1000); // 1초 뒤집기 애니메이션
@@ -650,7 +671,8 @@
                                         placeholder="여기에 답변을 입력하세요..."
                                         bind:value={answer}
                                         on:keydown={(e) => e.key === 'Enter' && e.ctrlKey && sendAnswer()}
-                                        disabled={isLoading}
+                                        disabled={isLoading}                                        
+                                        bind:this={answerTextArea}
                                     />
                                     {#if answer.length > 0}
                                         <div class="absolute right-3 bottom-3">
