@@ -262,7 +262,7 @@
       </div>
 
       <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-        <p>© 2024 {config.siteName}. Made with ❤️ for 부산 청년들</p>
+        <p>© 2025 {config.siteName}. Made with ❤️ for 부산 청년들</p>
       </div>
     </div>
   </footer>

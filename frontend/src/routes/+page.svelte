@@ -241,13 +241,13 @@
       </div>
     {:else}
       <!-- 정상 데이터 표시 -->
-      <div class="card p-6 text-center bg-gradient-to-br from-blue-50 to-blue-100 animate-fade-in">
+      <a href="/search?status=accepting" class="card p-6 text-center bg-gradient-to-br from-blue-50 to-blue-100 animate-fade-in hover:shadow-lg transition-all duration-300 block">
         <div class="w-12 h-12 mx-auto mb-4 bg-blue-500 rounded-xl flex items-center justify-center">
           <Calendar class="text-white" size={24} />
         </div>
         <div class="text-2xl lg:text-3xl font-bold text-blue-600">{totJobOpening.activeJobs}건</div>
         <div class="text-sm text-gray-600">진행중인 채용</div>
-      </div>
+      </a>
 
       <div class="card p-6 text-center bg-gradient-to-br from-orange-50 to-orange-100 animate-fade-in">
         <div class="w-12 h-12 mx-auto mb-4 bg-orange-500 rounded-xl flex items-center justify-center">
