@@ -25,7 +25,6 @@
     let chartCanvas: HTMLCanvasElement;
     let chartInstance: Chart | null = null;
 
-    let answerTextArea: HTMLTextAreaElement;
 
     async function renderRadarChart() {
         await tick(); // DOM이 완전히 렌더링된 후 실행
@@ -92,6 +91,8 @@
 
     let sessionLabel = '-';
 
+    let ai_comment = '';
+
     // 카드 관련 상태
     let currentCard: {id: number, question?: string, flipped?: boolean, isFlipping?: boolean, colorIndex?: number} | null = null;
     let completedCards: Array<{id: number, question: string, answer: string}> = [];
@@ -128,20 +129,6 @@
         }
     }
 
-    // 카드가 뒤집어졌을 때 자동으로 textarea에 포커스
-    $: if (currentCard?.flipped && answerTextArea) {
-        focusTextarea();
-    }
-    
-    async function focusTextarea() {
-        await tick(); // DOM 업데이트 완료 대기
-        if (answerTextArea && currentCard?.flipped) {
-            answerTextArea.focus();
-            // 커서를 텍스트 끝으로 이동 (선택사항)
-            answerTextArea.setSelectionRange(answerTextArea.value.length, answerTextArea.value.length);
-        }
-    }
-
     // 카드 뽑기 (맨 위 카드를 앞으로)
     async function drawCard() {
         console.log('drawCard 호출됨', { isAnimating, isLoading, remainingCards });
@@ -165,17 +152,11 @@
         await loadQuestionForCard();
 
         // 카드 뒤집기 완료
-        setTimeout(async () => {
+        setTimeout(() => {
             if (currentCard) {
                 currentCard.isFlipping = false;
                 currentCard.flipped = true;
                 console.log('카드 뒤집기 완료');
-
-                // DOM 업데이트 후 포커스
-                await tick();
-                if (answerTextArea) {
-                    answerTextArea.focus();
-                }
             }
             isAnimating = false;
         }, 1000); // 1초 뒤집기 애니메이션
@@ -192,8 +173,9 @@
             //여기 수정해야됨 .
 
             if (data?.done) {
-                question = '평가가 완료되었습니다 🎉';
+                question = '평가가 완료되었습니다 🎉🎉';
                 result = data.scores;
+                ai_comment = data.ai_comment;
                 console.log(result);
                 index = TOTAL;
                 total = TOTAL;
@@ -274,6 +256,7 @@
             if (data?.done) {
                 question = '평가가 완료되었습니다 🎉';
                 result = data.scores;
+                ai_comment = data.ai_comment;
                 console.log(result);
                 index = TOTAL;
                 total = TOTAL;
@@ -671,8 +654,7 @@
                                         placeholder="여기에 답변을 입력하세요..."
                                         bind:value={answer}
                                         on:keydown={(e) => e.key === 'Enter' && e.ctrlKey && sendAnswer()}
-                                        disabled={isLoading}                                        
-                                        bind:this={answerTextArea}
+                                        disabled={isLoading}
                                     />
                                     {#if answer.length > 0}
                                         <div class="absolute right-3 bottom-3">
@@ -782,9 +764,9 @@
             {/if}
         {:else}
             <!-- 결과 화면 -->
-            <div class="py-8">
+            <div class="py-8 space-y-10">
                 <!-- 완료 헤더 -->
-                <div class="text-center mb-8">
+                <div class="text-center">
                     <div class="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
                         <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -794,89 +776,81 @@
                     <p class="text-gray-600">당신의 직무 적합도 분석 결과입니다</p>
                 </div>
 
-                <!-- 결과 표시 -->
-                <div class="bg-white rounded-xl p-6 shadow-lg">
-                    <h3 class="font-semibold text-gray-700 mb-4 flex items-center">
-                        <svg class="w-5 h-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        상세 분석 결과
-                    </h3>
-                    <!--
-                    <div class="bg-gray-50 rounded-lg p-4 font-mono text-sm text-gray-700 overflow-auto max-h-96 border border-gray-200">
-                        <pre class="whitespace-pre-wrap">{JSON.stringify(result, null, 2)}</pre>
-                    </div>
-                    -->
-
+                <!-- 결과 본문 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <!-- Radar Chart -->
-                    <div class="bg-white border border-gray-200 rounded-lg p-6">
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-4">능력치 레이더 차트</h3>
                         <canvas bind:this={chartCanvas} width="400" height="400"></canvas>
+                    </div>
+
+                    <!-- 점수 요약 -->
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-4">세부 점수 요약</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            {#each Object.entries(result) as [trait, score]}
+                                {#if typeof score === 'number'}
+                                    <div class="flex items-center justify-between px-4 py-2 rounded-lg bg-gray-50 border">
+                                        <span class="text-sm font-medium text-gray-700">{trait}</span>
+                                        <span class="text-base font-bold text-purple-600">{score}</span>
+                                    </div>
+                                {/if}
+                            {/each}
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">구직자를 위한 AI 조언 한마디</h3>
+                    <div class="bg-white rounded-xl p-6 shadow-lg border border-gray-200">
+                        <p class="text-gray-800 leading-relaxed">
+                            {ai_comment}
+                        </p>
                     </div>
                 </div>
 
-                <!-- 액션 버튼들 -->
-                <div class="mt-6 flex justify-center space-x-3">
+                <!-- 추천 채용 정보 -->
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900 mb-4">AI 추천 채용 정보</h3>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {#each recommendJobOpening.slice(0, 3) as job}
+                            <div class="card p-6 hover:shadow-lg transition-all duration-300 group cursor-pointer">
+                                <!-- 기관명 -->
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-purple-600">{job.기관명}</span>
+                                </div>
+                                <!-- 공고명 -->
+                                <h3 class="text-lg font-bold text-gray-900 mb-3 leading-tight group-hover:text-purple-700">
+                                    {job.공고명}
+                                </h3>
+                                <!-- 접수기간 -->
+                                <div class="flex items-center text-sm text-gray-600 mb-1">
+                                    <Calendar size={16} class="mr-1 text-gray-400" /> {job.접수기간}
+                                </div>
+                                <!-- 모집직렬 -->
+                                <div class="flex items-center text-sm text-gray-600 mb-4">
+                                    <Users size={16} class="mr-1 text-gray-400" /> {job.jobSeries || '일반직'}
+                                </div>
+                                <!-- 버튼 -->
+                                <button class="w-full btn-primary text-sm py-2">지원하기</button>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+
+                <!-- 액션 버튼 -->
+                <div class="flex justify-center mt-8">
                     <button
-                        on:click={() => window.location.reload()}
-                        class="px-6 py-2.5 bg-white border border-gray-300 rounded-lg font-medium
-                               text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+                            on:click={() => window.location.reload()}
+                            class="px-6 py-2.5 bg-white border border-gray-300 rounded-lg font-medium
+                       text-gray-700 hover:bg-gray-50 transition-colors duration-200"
                     >
                         다시 테스트 해보기
                     </button>
-
                 </div>
-
-                <!-- AI추천채용정보 -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {#each recommendJobOpening.slice(0, 3) as job}
-                        <div class="card p-6 hover:shadow-lg transition-all duration-300 group cursor-pointer animate-fade-in">
-                            <!-- 기관명 -->
-                            <div class="flex items-center space-x-2 mb-3">
-                                <div class="w-2 h-2 bg-primary-500 rounded-full"></div>
-                                <span class="text-sm font-medium text-primary-600">{job.agencyName}</span>
-                            </div>
-
-                            <!-- 공고명 -->
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 group-hover:text-primary-700 transition-colors leading-tight">
-                                {job.jobTitle}
-                            </h3>
-
-                            <!-- 접수기간 -->
-                            <div class="flex items-center space-x-2 mb-3 text-sm text-gray-600">
-                                <Calendar size={16} class="text-gray-400" />
-                                <span>접수기간</span>
-                            </div>
-                            <div class="text-sm font-medium text-gray-900 mb-4">
-                                {#if job.applicationStart && job.applicationEnd}
-                                    {format(new Date(job.applicationStart), 'M.dd', { locale: ko })} ~
-                                    {format(new Date(job.applicationEnd), 'M.dd', { locale: ko })}
-                                {:else}
-                                    <span>기간 정보 없음</span>
-                                {/if}
-
-                            </div>
-
-                            <!-- 모집직렬 -->
-                            <div class="flex items-center space-x-2 mb-4 text-sm text-gray-600">
-                                <Users size={16} class="text-gray-400" />
-                                <span>모집직렬</span>
-                            </div>
-                            <div class="text-sm font-medium text-gray-900 mb-4">
-                                {job.jobSeries || '일반직'}
-                            </div>
-
-                            <!-- 지원하기 버튼 -->
-                            <button class="w-full btn-primary text-sm py-2 mt-auto">
-                                지원하기
-                            </button>
-                        </div>
-                    {/each}
-                </div>
-
-
-
             </div>
         {/if}
+
     </div>
 </div>
 
