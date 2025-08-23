@@ -346,7 +346,7 @@
         };
 
         try {
-            const response = await fetch('http://localhost:8080/job-register', {
+            const response = await fetch(`${config.backendUrl}/job-register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -534,10 +534,12 @@
                 </div>
                 <div class="text-center">
                     <p class="text-gray-600 mb-6">채용공고가 성공적으로 등록되었습니다.</p>
-                    <div class="flex items-center justify-center space-x-2 text-sm text-green-600">
-                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>2초 후 검색 페이지로 이동합니다...</span>
-                    </div>
+                    <button
+                        on:click={() => isSuccess = false}
+                        class="btn-primary px-6 py-2"
+                    >
+                        확인
+                    </button>
                 </div>
             </div>
         </div>
