@@ -118,8 +118,8 @@
         break;
       case 'hiring':
         filtered.sort((a, b) => {
-          const countA = parseInt(a.모집인원 || 0);
-          const countB = parseInt(b.모집인원 || 0);
+          const countA = a.모집인원 ? parseInt(a.모집인원) : (a.채용인원 ? parseInt(a.채용인원) : 0);
+          const countB = b.모집인원 ? parseInt(b.모집인원) : (b.채용인원 ? parseInt(b.채용인원) : 0);
           return countB - countA;
         });
         break;
@@ -142,7 +142,7 @@
       applicationStart: job.접수시작일,
       applicationEnd: job.접수마감일,
       categories: job.일반전형 ? job.일반전형.split(',').map(c => c.trim()) : [],
-      requiredCount: parseInt(job.모집인원 || 0),
+      requiredCount: job.모집인원 ? parseInt(job.모집인원) : (job.채용인원 ? parseInt(job.채용인원) : null),
       requirements: job.지역조건 || '',
       status: getJobStatus(job)
     }));
@@ -259,23 +259,41 @@
     await loadSearchData();
   }
   
-  // URL 파라미터에서 기관 정보 읽어오기
-  $: {
+  // URL 파라미터 처리를 위한 변수
+  let urlParamsProcessed = false;
+  
+  // 초기 URL 파라미터 처리 (onMount에서 한 번만 실행)
+  function processUrlParams() {
+    if (urlParamsProcessed) return;
+    
     const urlParams = $page.url.searchParams;
     const agencyParam = urlParams.get('agency');
-    if (agencyParam && !selectedAgency) {
+    const statusParam = urlParams.get('status');
+    
+    // 기관 파라미터 처리
+    if (agencyParam) {
       selectedAgency = decodeURIComponent(agencyParam);
-      // 필터 패널 자동으로 열기
       showFilters = true;
-      if (rawData.jobs.length > 0) {
-        applyFilters();
-      }
+    }
+    
+    // 상태 파라미터 처리
+    if (statusParam === 'accepting') {
+      selectedStatus = '접수중';
+      showFilters = true;
+    }
+    
+    urlParamsProcessed = true;
+    
+    if (rawData.jobs.length > 0) {
+      applyFilters();
     }
   }
   
   // 초기 데이터 로드
   onMount(async () => {
+    processUrlParams();  // URL 파라미터 먼저 처리
     await loadSearchData();
+    processUrlParams();  // 데이터 로드 후 다시 한 번 처리 (필터 적용을 위해)
   });
 </script>
 
@@ -385,7 +403,6 @@
             >
               <option value="">전체 상태</option>
               <option value="접수중">접수중</option>
-              <option value="진행중">진행중</option>
               <option value="마감">마감</option>
             </select>
           </div>
@@ -558,10 +575,12 @@
                     </div>
                     
                     <div class="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-                      <div class="flex items-center space-x-1">
-                        <Users size={14} />
-                        <span>{job.requiredCount}명 모집</span>
-                      </div>
+                      {#if job.requiredCount}
+                        <div class="flex items-center space-x-1">
+                          <Users size={14} />
+                          <span>{job.requiredCount}명 모집</span>
+                        </div>
+                      {/if}
                       <div class="flex items-center space-x-1">
                         <Calendar size={14} />
                         <span>~{job.endDate}</span>

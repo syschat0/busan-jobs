@@ -51,7 +51,8 @@
     
     // 실제 데이터가 없으면 예상 경쟁률 사용
     if (avgCompetition === 0) {
-      avgCompetition = job.requiredCount > 100 ? 25 : job.requiredCount > 50 ? 45 : job.requiredCount > 20 ? 65 : 85;
+      const count = job.requiredCount || 0;
+      avgCompetition = count > 100 ? 25 : count > 50 ? 45 : count > 20 ? 65 : 85;
     }
     
     const rate = Math.round(avgCompetition * 10) / 10; // 소수점 1자리
@@ -121,13 +122,15 @@
     
     <!-- 핵심 정보 그리드 -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
-      <div class="flex items-center space-x-2">
-        <Users size={16} class="text-gray-400" />
-        <div>
-          <span class="text-gray-500">모집인원</span>
-          <span class="ml-2 font-semibold text-gray-900">{job.requiredCount}명</span>
+      {#if job.requiredCount}
+        <div class="flex items-center space-x-2">
+          <Users size={16} class="text-gray-400" />
+          <div>
+            <span class="text-gray-500">모집인원</span>
+            <span class="ml-2 font-semibold text-gray-900">{job.requiredCount}명</span>
+          </div>
         </div>
-      </div>
+      {/if}
       
       <div class="flex items-center space-x-2">
         <TrendingUp size={16} class="text-gray-400" />
