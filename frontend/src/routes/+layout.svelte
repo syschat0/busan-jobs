@@ -247,7 +247,7 @@
             <li><a href="/search" class="hover:text-white transition-colors">채용정보 검색</a></li>
             <li><a href="/calendar" class="hover:text-white transition-colors">채용 캘린더</a></li>
             <li><a href="/analysis" class="hover:text-white transition-colors">경쟁률 분석</a></li>
-            <li><a href="/tools/resume" class="hover:text-white transition-colors">AI 자기소개서</a></li>
+            <li><a href="/job-register" class="hover:text-white transition-colors">채용정보등록</a></li>
           </ul>
         </div>
 
