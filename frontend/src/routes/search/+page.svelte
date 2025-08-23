@@ -148,8 +148,10 @@
     }));
   }
   
-  // 반응형 필터 적용
+  // 반응형 필터 적용 - 필터 상태가 변경될 때마다 실행
   $: if (rawData.jobs.length > 0) {
+    // 필터 상태 변경 감지
+    searchQuery, selectedAgency, selectedStatus, selectedCategory, sortBy, competitionLevel;
     applyFilters();
   }
   
