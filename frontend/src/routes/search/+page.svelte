@@ -8,6 +8,8 @@
   // Stores import
   import { filteredJobs, filters, uniqueAgencies, uniqueCategories, updateFilters, resetFilters } from '$lib/stores/jobs.js';
   import { viewMode, setViewMode, showNotification } from '$lib/stores/ui.js';
+
+  import { page } from '$app/stores';
   
   // UI 상태
   let showFilters = false;
@@ -72,6 +74,18 @@
   }
   
   $: activeFilterCount = getActiveFilterCount();
+
+
+  // URL 파라미터에서 기관 정보 읽어오기
+  $: {
+    const urlParams = $page.url.searchParams;
+    const agencyParam = urlParams.get('agency');
+    if (agencyParam && !selectedAgency) {
+      selectedAgency = decodeURIComponent(agencyParam);
+      // 필터 패널 자동으로 열기
+      showFilters = true;
+    }
+  }
 </script>
 
 <svelte:head>
