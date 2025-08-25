@@ -12,10 +12,13 @@
         AlertCircle,
         CheckCircle,
         Star,
-        Target
+        Target,
+        RotateCcw,
+        Sparkles
     } from 'lucide-svelte';
     import { config } from '$lib/utils/config.js';
     import { goto } from '$app/navigation';
+    import Chart from 'chart.js/auto';
 
     // 폼 데이터
     let formData = {
@@ -37,47 +40,199 @@
         연락처: ''
     };
 
-    // 점수 항목 데이터 (1점으로 초기화)
+    // 점수 항목 데이터 (슬라이더용으로 변경)
     let scoreData = {
-        공감사회기술: 1,
-        성실성: 1,
-        개방성: 1,
-        외향성: 1,
-        우호성: 1,
-        정서안정성: 1,
-        기술전문성: 1,
-        인지문제해결: 1,
-        대인영향력: 1,
-        자기관리: 1,
-        적응력: 1,
-        학습속도: 1,
-        대인민첩성: 1,
-        성과민첩성: 1,
-        자기인식: 1,
-        자기조절: 1
+        공감사회기술: 3,
+        성실성: 3,
+        개방성: 3,
+        외향성: 3,
+        우호성: 3,
+        정서안정성: 3,
+        기술전문성: 3,
+        인지문제해결: 3,
+        대인영향력: 3,
+        자기관리: 3,
+        적응력: 3,
+        학습속도: 3,
+        대인민첩성: 3,
+        성과민첩성: 3,
+        자기인식: 3,
+        자기조절: 3
     };
 
+    // 직무별 템플릿 프리셋
+    const jobPresets = {
+        기술직: {
+            name: '기술직',
+            description: '기술 전문성과 문제해결 중심',
+            scores: {
+                공감사회기술: 2,
+                성실성: 4,
+                개방성: 3,
+                외향성: 2,
+                우호성: 3,
+                정서안정성: 3,
+                기술전문성: 5,
+                인지문제해결: 5,
+                대인영향력: 2,
+                자기관리: 4,
+                적응력: 3,
+                학습속도: 4,
+                대인민첩성: 2,
+                성과민첩성: 4,
+                자기인식: 3,
+                자기조절: 3
+            }
+        },
+        사무직: {
+            name: '사무직',
+            description: '균형잡힌 역량 분포',
+            scores: {
+                공감사회기술: 3,
+                성실성: 4,
+                개방성: 3,
+                외향성: 3,
+                우호성: 4,
+                정서안정성: 3,
+                기술전문성: 3,
+                인지문제해결: 4,
+                대인영향력: 3,
+                자기관리: 4,
+                적응력: 3,
+                학습속도: 3,
+                대인민첩성: 3,
+                성과민첩성: 3,
+                자기인식: 3,
+                자기조절: 4
+            }
+        },
+        서비스직: {
+            name: '서비스직',
+            description: '대인관계와 소통 중심',
+            scores: {
+                공감사회기술: 5,
+                성실성: 4,
+                개방성: 4,
+                외향성: 5,
+                우호성: 5,
+                정서안정성: 4,
+                기술전문성: 2,
+                인지문제해결: 3,
+                대인영향력: 4,
+                자기관리: 3,
+                적응력: 4,
+                학습속도: 3,
+                대인민첩성: 4,
+                성과민첩성: 3,
+                자기인식: 3,
+                자기조절: 3
+            }
+        },
+        관리직: {
+            name: '관리직',
+            description: '리더십과 전략적 사고 중심',
+            scores: {
+                공감사회기술: 4,
+                성실성: 4,
+                개방성: 4,
+                외향성: 4,
+                우호성: 3,
+                정서안정성: 4,
+                기술전문성: 3,
+                인지문제해결: 4,
+                대인영향력: 5,
+                자기관리: 5,
+                적응력: 3,
+                학습속도: 3,
+                대인민첩성: 4,
+                성과민첩성: 4,
+                자기인식: 4,
+                자기조절: 4
+            }
+        }
+    };
+
+    // 선택된 프리셋
+    let selectedPreset = '';
+    
+    // 자동 균형 조정 모드
+    let autoBalance = true;
 
     // 점수 계산
     $: totalScore = Object.values(scoreData).reduce((sum, score) => sum + score, 0);
-    $: remainingScore = 50 - totalScore;
+    $: averageScore = (totalScore / 16).toFixed(1);
 
-
-    // 점수 변경 함수 (1~5점 제한)
+    // 슬라이더로 점수 변경
     function updateScore(field, value) {
-        const numValue = parseInt(value) || 1;
-        if (numValue >= 1 && numValue <= 5) {
+        const numValue = parseInt(value);
+        
+        if (autoBalance) {
+            // 자동 균형 조정 모드
+            const oldTotal = totalScore;
             const oldValue = scoreData[field];
             const difference = numValue - oldValue;
-
-            if (totalScore + difference <= 50) {
-                scoreData[field] = numValue;
-                scoreError = null; // 성공 시 점수 에러 메시지 제거
-            } else {
-                scoreError = `총점이 50점을 초과합니다. 현재 총점: ${totalScore + difference}점, 남은 점수: ${50 - (totalScore + difference)}점`;
+            
+            scoreData[field] = numValue;
+            
+            // 다른 항목들을 자동으로 조정
+            if (difference !== 0) {
+                adjustOtherScores(field, difference);
             }
+        } else {
+            // 수동 모드
+            scoreData[field] = numValue;
+        }
+        
+        scoreError = null;
+    }
+
+    // 다른 점수들을 자동으로 조정
+    function adjustOtherScores(changedField, difference) {
+        const fields = Object.keys(scoreData).filter(f => f !== changedField);
+        const adjustment = -difference / fields.length;
+        
+        fields.forEach(field => {
+            let newValue = scoreData[field] + adjustment;
+            newValue = Math.max(1, Math.min(5, newValue));
+            scoreData[field] = Math.round(newValue * 10) / 10; // 소수점 한자리까지
+        });
+        
+        // 정수로 반올림
+        Object.keys(scoreData).forEach(field => {
+            scoreData[field] = Math.round(scoreData[field]);
+        });
+    }
+
+    // 프리셋 적용
+    function applyPreset(presetKey) {
+        if (jobPresets[presetKey]) {
+            selectedPreset = presetKey;
+            scoreData = { ...jobPresets[presetKey].scores };
         }
     }
+
+    // 점수 초기화
+    function resetScores() {
+        selectedPreset = '';
+        Object.keys(scoreData).forEach(key => {
+            scoreData[key] = 3;
+        });
+    }
+
+    // 레이더 차트용 데이터 변환
+    $: radarChartData = {
+        labels: Object.keys(scoreData),
+        datasets: [{
+            label: '평가 점수',
+            data: Object.values(scoreData),
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: 'rgba(59, 130, 246, 1)',
+            pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(59, 130, 246, 1)'
+        }]
+    };
 
     // UI 상태
     let isLoading = false;
@@ -191,7 +346,7 @@
         };
 
         try {
-            const response = await fetch('http://localhost:8080/job-register', {
+            const response = await fetch(`${config.backendUrl}/job-register`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -248,25 +403,7 @@
             연락처: ''
         };
 
-        scoreData = {
-            공감사회기술: 1,
-            성실성: 1,
-            개방성: 1,
-            외향성: 1,
-            우호성: 1,
-            정서안정성: 1,
-            기술전문성: 1,
-            인지문제해결: 1,
-            대인영향력: 1,
-            자기관리: 1,
-            적응력: 1,
-            학습속도: 1,
-            대인민첩성: 1,
-            성과민첩성: 1,
-            자기인식: 1,
-            자기조절: 1
-        };
-
+        resetScores();
         error = null;
         scoreError = null;
         isSuccess = false;
@@ -276,6 +413,92 @@
     function togglePreview() {
         showPreview = !showPreview;
     }
+
+    // 차트 인스턴스
+    let radarChartInstance = null;
+
+    // 차트 초기화 및 업데이트
+    function initOrUpdateChart() {
+        const ctx = document.getElementById('radarChart');
+        if (!ctx) return;
+
+        const chartData = {
+            labels: Object.keys(scoreData),
+            datasets: [{
+                label: '평가 점수',
+                data: Object.values(scoreData),
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        };
+
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                r: {
+                    min: 0,
+                    max: 5,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: 10
+                        }
+                    },
+                    pointLabels: {
+                        font: {
+                            size: 11
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    }
+                }
+            }
+        };
+
+        if (radarChartInstance) {
+            // 기존 차트 업데이트
+            radarChartInstance.data = chartData;
+            radarChartInstance.update();
+        } else {
+            // 새 차트 생성
+            radarChartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: chartData,
+                options: chartOptions
+            });
+        }
+    }
+
+    // 점수 데이터가 변경될 때마다 차트 업데이트
+    $: if (typeof window !== 'undefined' && scoreData) {
+        initOrUpdateChart();
+    }
+
+    onMount(() => {
+        // 차트 초기화
+        initOrUpdateChart();
+
+        return () => {
+            // 컴포넌트 언마운트 시 차트 정리
+            if (radarChartInstance) {
+                radarChartInstance.destroy();
+            }
+        };
+    });
 </script>
 
 <svelte:head>
@@ -311,10 +534,12 @@
                 </div>
                 <div class="text-center">
                     <p class="text-gray-600 mb-6">채용공고가 성공적으로 등록되었습니다.</p>
-                    <div class="flex items-center justify-center space-x-2 text-sm text-green-600">
-                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>2초 후 검색 페이지로 이동합니다...</span>
-                    </div>
+                    <button
+                        on:click={() => isSuccess = false}
+                        class="btn-primary px-6 py-2"
+                    >
+                        확인
+                    </button>
                 </div>
             </div>
         </div>
@@ -631,88 +856,138 @@
         </section>
 
         <!-- 점수 평가 -->
-        <section class="card p-6 space-y-6">
+        <section class="card p-8 space-y-6">
             <!-- 헤더 -->
-            <div class="text-center space-y-3">
-                <div class="flex items-center justify-center space-x-3">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
                     <Target size={24} class="text-primary-600" />
-                    <h2 class="text-xl font-bold text-gray-900">평가 점수</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">직무 적합성 평가</h2>
                 </div>
-                <p class="text-sm text-gray-600">각 항목에 대해 1~5점을 부여하세요. 총점은 50점을 초과할 수 없습니다.</p>
+                <div class="flex items-center space-x-2">
+                    <label class="flex items-center space-x-2 text-sm">
+                        <input
+                            type="checkbox"
+                            bind:checked={autoBalance}
+                            class="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        />
+                        <span class="text-gray-700">자동 균형 조정</span>
+                    </label>
+                </div>
             </div>
 
-            <!-- 점수 요약 (고정 위치) -->
-            <div class="sticky top-4 z-10 bg-white border-2 border-primary-200 rounded-lg p-4 shadow-lg">
-                <div class="flex items-center justify-center space-x-6">
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-primary-600">{totalScore}</div>
-                        <div class="text-xs font-medium text-gray-600">현재 점수</div>
+            <!-- 프리셋 템플릿 선택 -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-2">
+                        <Sparkles size={20} class="text-primary-600" />
+                        <h3 class="font-semibold text-gray-900">빠른 설정: 직무별 템플릿</h3>
                     </div>
-                    <div class="w-px h-8 bg-gray-300"></div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold {remainingScore >= 0 ? 'text-green-600' : 'text-red-600'}">{remainingScore}</div>
-                        <div class="text-xs font-medium text-gray-600">남은 점수</div>
-                    </div>
-                    <div class="w-px h-8 bg-gray-300"></div>
-                    <div class="text-center">
-                        <div class="text-2xl font-bold text-gray-700">50</div>
-                        <div class="text-xs font-medium text-gray-600">최대 점수</div>
-                    </div>
+                    {#if selectedPreset}
+                        <button
+                            type="button"
+                            on:click={resetScores}
+                            class="text-sm text-gray-600 hover:text-gray-900 flex items-center space-x-1"
+                        >
+                            <RotateCcw size={16} />
+                            <span>초기화</span>
+                        </button>
+                    {/if}
                 </div>
-
-                <!-- 점수 초과 경고 -->
-                {#if remainingScore < 0}
-                    <div class="mt-3 p-2 bg-red-50 border border-red-200 rounded">
-                        <div class="flex items-center space-x-2">
-                            <AlertCircle size={16} class="text-red-600" />
-                            <span class="text-red-700 text-sm font-medium">총점이 50점을 초과했습니다. 현재 총점: {totalScore}점, 초과: {Math.abs(remainingScore)}점</span>
-                        </div>
-                    </div>
-                {/if}
-            </div>
-
-            <!-- 점수 입력 그리드 -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {#each Object.entries(scoreData) as [field, score]}
-                    <div class="bg-white border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition-all duration-200">
-                        <div class="space-y-4">
-                            <!-- 항목명 -->
-                            <div class="text-center">
-                                <h3 class="text-sm font-semibold text-gray-900 leading-tight">{field}</h3>
-                            </div>
-
-                            <!-- 현재 점수 표시 -->
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-primary-600">{score}</div>
-                                <div class="text-xs text-gray-500">현재 점수</div>
-                            </div>
-
-                            <!-- 점수 입력 버튼 -->
-                            <div class="space-y-2">
-                                <div class="flex justify-center space-x-1">
-                                    {#each Array(5) as _, i}
-                                        <button
-                                                type="button"
-                                                on:click={() => updateScore(field, i + 1)}
-                                                class="w-8 h-8 rounded border-2 font-bold text-sm transition-all duration-200 hover:scale-110 {i + 1 === score ? 'bg-primary-500 border-primary-500 text-white shadow-md' : 'border-gray-300 text-gray-600 hover:border-primary-300 hover:bg-primary-50'}"
-                                        >
-                                            {i + 1}
-                                        </button>
-                                    {/each}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {#each Object.entries(jobPresets) as [key, preset]}
+                        <button
+                            type="button"
+                            on:click={() => applyPreset(key)}
+                            class="relative p-4 rounded-lg border-2 transition-all duration-200 {selectedPreset === key 
+                                ? 'border-primary-500 bg-primary-50 shadow-lg' 
+                                : 'border-gray-200 bg-white hover:border-primary-300 hover:shadow-md'}"
+                        >
+                            {#if selectedPreset === key}
+                                <div class="absolute top-2 right-2">
+                                    <CheckCircle size={16} class="text-primary-600" />
                                 </div>
-                                <div class="text-center text-xs text-gray-400">1~5점</div>
+                            {/if}
+                            <div class="text-left">
+                                <div class="font-semibold text-gray-900">{preset.name}</div>
+                                <div class="text-xs text-gray-600 mt-1">{preset.description}</div>
                             </div>
+                        </button>
+                    {/each}
+                </div>
+            </div>
 
-                            <!-- 점수 막대 -->
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                        class="bg-gradient-to-r from-primary-400 to-blue-500 h-2 rounded-full transition-all duration-300"
-                                        style="width: {((score - 1) / 4) * 100}%"
-                                ></div>
-                            </div>
+            <!-- 실시간 레이더 차트 미리보기와 슬라이더 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 레이더 차트 미리보기 -->
+                <div class="bg-gray-50 rounded-xl p-6">
+                    <h3 class="font-semibold text-gray-900 mb-4">실시간 미리보기</h3>
+                    <div class="relative bg-white rounded-lg p-4 shadow-inner">
+                        <canvas id="radarChart" class="w-full" style="max-height: 400px;"></canvas>
+                    </div>
+                    <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                        <div class="bg-white rounded-lg p-3">
+                            <div class="text-gray-600">총점</div>
+                            <div class="text-2xl font-bold text-primary-600">{totalScore}점</div>
+                        </div>
+                        <div class="bg-white rounded-lg p-3">
+                            <div class="text-gray-600">평균</div>
+                            <div class="text-2xl font-bold text-gray-900">{averageScore}점</div>
                         </div>
                     </div>
-                {/each}
+                </div>
+
+                <!-- 슬라이더 입력 영역 -->
+                <div class="space-y-4">
+                    <h3 class="font-semibold text-gray-900 mb-4">세부 조정</h3>
+                    <div class="space-y-3 max-h-96 overflow-y-auto pr-2">
+                        {#each Object.entries(scoreData) as [field, score]}
+                            <div class="bg-white rounded-lg p-4 border border-gray-200 hover:border-primary-300 transition-colors">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label for={field} class="text-sm font-medium text-gray-700">
+                                        {field}
+                                    </label>
+                                    <span class="text-lg font-bold text-primary-600">{score}</span>
+                                </div>
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-xs text-gray-500">1</span>
+                                    <input
+                                        id={field}
+                                        type="range"
+                                        min="1"
+                                        max="5"
+                                        step="1"
+                                        bind:value={scoreData[field]}
+                                        on:input={(e) => updateScore(field, e.target.value)}
+                                        class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                                    />
+                                    <span class="text-xs text-gray-500">5</span>
+                                </div>
+                                <div class="mt-2 h-1 bg-gray-200 rounded-full overflow-hidden">
+                                    <div 
+                                        class="h-full bg-gradient-to-r from-primary-400 to-primary-600 transition-all duration-300"
+                                        style="width: {((score - 1) / 4) * 100}%"
+                                    ></div>
+                                </div>
+                            </div>
+                        {/each}
+                    </div>
+                </div>
+            </div>
+
+            <!-- 도움말 -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start space-x-3">
+                    <AlertCircle size={20} class="text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div class="text-sm text-blue-800">
+                        <p class="font-semibold mb-1">평가 점수 설정 가이드</p>
+                        <ul class="space-y-1 text-xs">
+                            <li>• <strong>템플릿 선택:</strong> 직무 유형에 맞는 템플릿을 선택하면 자동으로 적절한 점수가 설정됩니다</li>
+                            <li>• <strong>세부 조정:</strong> 슬라이더를 움직여 각 역량의 중요도를 1-5점으로 조정하세요</li>
+                            <li>• <strong>자동 균형:</strong> 활성화하면 한 항목을 조정할 때 다른 항목들이 자동으로 균형을 맞춥니다</li>
+                            <li>• <strong>실시간 미리보기:</strong> 레이더 차트에서 역량 분포를 실시간으로 확인할 수 있습니다</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -784,7 +1059,7 @@
 
                 <button
                         type="submit"
-                        disabled={isLoading || remainingScore < 0}
+                        disabled={isLoading}
                         class="btn-primary inline-flex items-center space-x-2"
                 >
                     {#if isLoading}
@@ -844,19 +1119,40 @@
 
             <!-- 점수 정보 -->
             <div>
-                <h3 class="font-medium text-gray-900 mb-2">평가 점수</h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <h3 class="font-medium text-gray-900 mb-2">직무 적합성 평가 점수</h3>
+                {#if selectedPreset}
+                    <div class="mb-3 p-3 bg-blue-50 rounded-lg">
+                        <span class="text-sm text-blue-800">선택된 템플릿: <strong>{jobPresets[selectedPreset].name}</strong></span>
+                    </div>
+                {/if}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {#each Object.entries(scoreData) as [field, score]}
-                        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <span class="text-sm text-gray-600">{field}</span>
-                            <span class="font-medium text-primary-600">{score}점</span>
+                        <div class="bg-white border border-gray-200 rounded-lg p-3">
+                            <div class="text-xs text-gray-600 mb-1">{field}</div>
+                            <div class="flex items-center space-x-2">
+                                <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                    <div 
+                                        class="h-full bg-primary-500 rounded-full transition-all duration-300"
+                                        style="width: {(score / 5) * 100}%"
+                                    ></div>
+                                </div>
+                                <span class="text-sm font-bold text-primary-600">{score}</span>
+                            </div>
                         </div>
                     {/each}
                 </div>
-                <div class="mt-4 p-3 bg-primary-50 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <span class="font-medium text-gray-900">총점</span>
-                        <span class="text-xl font-bold text-primary-600">{totalScore}/50점</span>
+                <div class="mt-4 grid grid-cols-2 gap-4">
+                    <div class="p-3 bg-gray-50 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">총점</span>
+                            <span class="text-xl font-bold text-gray-900">{totalScore}점</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-primary-50 rounded-lg">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">평균</span>
+                            <span class="text-xl font-bold text-primary-600">{averageScore}점</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -872,3 +1168,70 @@
         </section>
     {/if}
 </div>
+
+<style>
+    /* 슬라이더 커스터마이징 */
+    input[type="range"].slider {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    input[type="range"].slider::-webkit-slider-track {
+        background: #e5e7eb;
+        height: 8px;
+        border-radius: 4px;
+    }
+
+    input[type="range"].slider::-moz-range-track {
+        background: #e5e7eb;
+        height: 8px;
+        border-radius: 4px;
+    }
+
+    input[type="range"].slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        background: #3b82f6;
+        height: 20px;
+        width: 20px;
+        border-radius: 10px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    input[type="range"].slider::-moz-range-thumb {
+        appearance: none;
+        background: #3b82f6;
+        height: 20px;
+        width: 20px;
+        border-radius: 10px;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        transition: all 0.2s ease;
+    }
+
+    input[type="range"].slider:hover::-webkit-slider-thumb {
+        transform: scale(1.2);
+        background: #2563eb;
+    }
+
+    input[type="range"].slider:hover::-moz-range-thumb {
+        transform: scale(1.2);
+        background: #2563eb;
+    }
+
+    input[type="range"].slider:focus {
+        outline: none;
+    }
+
+    input[type="range"].slider:focus::-webkit-slider-thumb {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+
+    input[type="range"].slider:focus::-moz-range-thumb {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+    }
+</style>
